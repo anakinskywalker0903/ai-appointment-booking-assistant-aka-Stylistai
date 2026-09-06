@@ -1,0 +1,54 @@
+name: Feature Task
+description: Track a planned task or feature implementation for StylistAI V2.
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for tracking this task. Please link to the corresponding development phase.
+  - type: dropdown
+    id: workstream
+    attributes:
+      label: Workstream
+      description: Select which workstream this feature belongs to.
+      options:
+        - "Workstream A (Foundation & Backend)"
+        - "Workstream B (Frontend & Product)"
+        - "Shared / Cross-Cutting"
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Development Phase
+      options:
+        - "Phase 0 — Repository Setup"
+        - "Phase 1 — Architecture & Database"
+        - "Phase 2 — Authentication & Users"
+        - "Phase 3 — Core Business Logic"
+        - "Phase 4 — Appointment System"
+        - "Phase 5 — Frontend Application"
+        - "Phase 6 — External Integrations"
+        - "Phase 7 — AI Assistant"
+        - "Phase 8 — Production Hardening"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Description
+      description: Detailed summary of what needs to be implemented.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria (Definition of Done)
+      placeholder: |
+        - [ ] Implementation complete
+        - [ ] Validated against API contracts
+        - [ ] Error states handled
+        - [ ] Tested and verified
+    validations:
+      required: true
