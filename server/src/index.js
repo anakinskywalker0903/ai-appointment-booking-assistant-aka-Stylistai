@@ -7,6 +7,7 @@ import { employeesRoutes } from './routes/employees.js';
 import { appointmentsRoutes } from './routes/appointments.js';
 import { availabilityRoutes } from './routes/availability.js';
 import { calendarRoutes } from './routes/calendar.js';
+import { authRoutes } from './routes/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -25,7 +26,10 @@ app.options('*', cors());
 
 app.use(express.json({ limit: '10kb' })); // prevent payload flood attacks
 
-// Routes
+// V2 Core Routes (Workstream A & B contract)
+app.use('/api/v2/auth', authRoutes);
+
+// V1 Legacy & Transition Routes
 app.use('/api/chat', chatRoutes);
 app.use('/api/services', servicesRoutes);
 app.use('/api/employees', employeesRoutes);

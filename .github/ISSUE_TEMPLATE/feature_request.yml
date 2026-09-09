@@ -1,0 +1,31 @@
+name: Feature Request
+description: Propose a feature or implementation task for StylistAI V2
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: workstream
+    attributes:
+      label: Target Workstream
+      description: Which workstream owns this task?
+      options:
+        - "Workstream A — Foundation & Backend"
+        - "Workstream B — Frontend & Product"
+        - "Shared / Cross-Cutting"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: Clear and concise description of the feature to be built.
+    validations:
+      required: true
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Acceptance Criteria / Technical Requirements
+      description: List specific criteria required for completion.
+      placeholder: "- [ ] Endpoint handles ...\n- [ ] Database constraint prevents ..."
+    validations:
+      required: true
