@@ -1,52 +1,34 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Clock, PlusCircle, Scissors } from 'lucide-react';
+import { useAppointments } from '../../context/AppointmentContext';
+import { Clock, PlusCircle, Scissors, CheckCircle, AlertCircle, Phone, Mail } from 'lucide-react';
 import './StaffDashboard.css';
-
-const STAFF_SCHEDULE = [
-  {
-    id: 'apt-s1',
-    time: '09:30 - 10:15',
-    customer: 'Jessica Taylor',
-    email: 'jessica.t@example.com',
-    service: 'Haircut & Styling',
-    status: 'confirmed',
-    notes: 'Bob cut with bangs',
-  },
-  {
-    id: 'apt-s2',
-    time: '11:00 - 13:00',
-    customer: 'Michael Chang',
-    email: 'm.chang@example.com',
-    service: 'Hair Coloring (Highlights)',
-    status: 'confirmed',
-    notes: 'Ash blonde highlights, test strand done last week',
-  },
-  {
-    id: 'apt-s3',
-    time: '14:30 - 15:15',
-    customer: 'David Kim',
-    email: 'dkim@example.com',
-    service: 'Haircut',
-    status: 'confirmed',
-    notes: 'Regular maintenance cut',
-  },
-];
 
 const INITIAL_BLOCKED_TIMES = [
   { id: 'b1', reason: 'Lunch Break', start: '13:00', end: '14:00', recurring: 'Daily' },
-  { id: 'b2', reason: 'Team Sync', start: '09:00', end: '09:30', recurring: 'Mondays' },
+  { id: 'b2', reason: 'Team Standup', start: '09:00', end: '09:30', recurring: 'Mondays' },
 ];
 
 export default function StaffDashboard() {
   const { user } = useAuth();
-  const [schedule] = useState(STAFF_SCHEDULE);
+  const { getAppointmentsForStaff, updateAppointmentStatus } = useAppointments();
+
+  // Get appointments specifically booked for this logged-in stylist
+  const staffAppointments = getAppointmentsForStaff(user?.name || 'Sarah');
+
   const [blockedTimes, setBlockedTimes] = useState(INITIAL_BLOCKED_TIMES);
   const [isAvailable, setIsAvailable] = useState(true);
   const [blockReason, setBlockReason] = useState('');
   const [blockStart, setBlockStart] = useState('15:30');
   const [blockEnd, setBlockEnd] = useState('16:30');
   const [showBlockModal, setShowBlockModal] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+
+  const handleStatusChange = (id, newStatus) => {
+    updateAppointmentStatus(id, newStatus);
+    setFeedback(`Appointment #${id.slice(-4)} marked as ${newStatus}.`);
+    setTimeout(() => setFeedback(null), 3000);
+  };
 
   const handleAddBlock = (e) => {
     e.preventDefault();
@@ -63,6 +45,8 @@ export default function StaffDashboard() {
     ]);
     setBlockReason('');
     setShowBlockModal(false);
+    setFeedback('Blocked time added to schedule.');
+    setTimeout(() => setFeedback(null), 3000);
   };
 
   const handleRemoveBlock = (id) => {
@@ -75,7 +59,8 @@ export default function StaffDashboard() {
         <div>
           <h1 className="staff-title">Staff Portal</h1>
           <p className="staff-subtitle">
-            Welcome, <strong>{user?.name || 'Stylist'}</strong> ({user?.title || 'Staff Member'}).
+            Stylist: <strong>{user?.name || 'Stylist'}</strong> ({user?.title || 'Staff Member'}).
+            Showing appointments assigned to you.
           </p>
         </div>
 
@@ -83,56 +68,117 @@ export default function StaffDashboard() {
         <div className="availability-card">
           <div className="toggle-label">
             <span className={`status-dot ${isAvailable ? 'dot-active' : 'dot-blocked'}`}></span>
-            <span>Roster Status: <strong>{isAvailable ? 'Taking Bookings' : 'Schedule Paused'}</strong></span>
+            <span>Status: <strong>{isAvailable ? 'Taking Bookings' : 'Schedule Paused'}</strong></span>
           </div>
           <button
             type="button"
             onClick={() => setIsAvailable(!isAvailable)}
             className={`btn-toggle ${isAvailable ? 'btn-toggle-on' : 'btn-toggle-off'}`}
           >
-            {isAvailable ? 'Pause Appointments' : 'Resume Appointments'}
+            {isAvailable ? 'Pause Schedule' : 'Resume Schedule'}
           </button>
         </div>
       </div>
 
+      {feedback && (
+        <div className="staff-feedback-banner">
+          <AlertCircle size={16} />
+          <span>{feedback}</span>
+        </div>
+      )}
+
       <div className="staff-grid">
-        {/* Left: Today's Appointments */}
+        {/* Left: Assigned Appointments */}
         <div className="schedule-section">
           <div className="section-header">
-            <h2>Today's Appointments</h2>
-            <span className="badge-count">{schedule.length} bookings</span>
+            <h2>My Assigned Appointments</h2>
+            <span className="badge-count">{staffAppointments.length} bookings</span>
           </div>
 
-          <div className="timeline-cards">
-            {schedule.map((item) => (
-              <div key={item.id} className="timeline-card">
-                <div className="timeline-time">
-                  <Clock size={16} />
-                  <span>{item.time}</span>
-                </div>
-
-                <div className="timeline-content">
-                  <div className="client-header">
-                    <h3 className="client-name">{item.customer}</h3>
-                    <span className="service-tag">{item.service}</span>
+          {staffAppointments.length === 0 ? (
+            <div className="empty-state-staff">
+              <Clock size={36} style={{ color: '#888', marginBottom: 8 }} />
+              <h3>No appointments assigned yet</h3>
+              <p>When clients book with you in the Customer Portal, they will appear here in real-time.</p>
+            </div>
+          ) : (
+            <div className="timeline-cards">
+              {staffAppointments.map((item) => (
+                <div key={item.id} className={`timeline-card status-border-${item.status}`}>
+                  <div className="timeline-time">
+                    <Clock size={16} />
+                    <span>{item.time}</span>
+                    <small style={{ fontSize: '10px', color: '#ccc' }}>{item.date}</small>
                   </div>
 
-                  <div className="client-meta">
-                    <span>{item.email}</span>
-                  </div>
-
-                  {item.notes && (
-                    <div className="client-notes">
-                      <strong>Client Notes:</strong> {item.notes}
+                  <div className="timeline-content">
+                    <div className="client-header">
+                      <div>
+                        <h3 className="client-name">{item.customerName}</h3>
+                        <span className="client-role-badge">Client</span>
+                      </div>
+                      <span className={`staff-status-badge badge-${item.status}`}>
+                        {item.status.toUpperCase()}
+                      </span>
                     </div>
-                  )}
+
+                    <div className="client-meta-row">
+                      <span><Mail size={13} style={{ display: 'inline', marginRight: 4 }} />{item.customerEmail}</span>
+                      {item.customerPhone && (
+                        <span><Phone size={13} style={{ display: 'inline', marginRight: 4 }} />{item.customerPhone}</span>
+                      )}
+                    </div>
+
+                    <div className="service-assigned-tag">
+                      <Scissors size={14} />
+                      <span>{item.serviceName} ({item.serviceDuration} mins • {item.servicePrice})</span>
+                    </div>
+
+                    {item.notes && (
+                      <div className="client-notes">
+                        <strong>Client Requests:</strong> "{item.notes}"
+                      </div>
+                    )}
+
+                    {/* Staff Actions */}
+                    <div className="staff-item-actions">
+                      {item.status !== 'completed' && item.status !== 'cancelled' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleStatusChange(item.id, 'in_progress')}
+                            className="btn-status-action start"
+                          >
+                            In Service
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleStatusChange(item.id, 'completed')}
+                            className="btn-status-action complete"
+                          >
+                            <CheckCircle size={13} style={{ display: 'inline', marginRight: 3 }} />
+                            Done
+                          </button>
+                        </>
+                      )}
+                      {item.status !== 'cancelled' && item.status !== 'completed' && (
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(item.id, 'cancelled')}
+                          className="btn-status-action cancel"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Right: Blocked Times & Quick Schedule Management */}
+        {/* Right: Blocked Times & Qualified Services */}
         <div className="side-section">
           <div className="side-card">
             <div className="section-header">
@@ -143,7 +189,7 @@ export default function StaffDashboard() {
                 className="btn-add-block"
               >
                 <PlusCircle size={15} />
-                <span>Add Block</span>
+                <span>Add Break</span>
               </button>
             </div>
 
@@ -152,7 +198,7 @@ export default function StaffDashboard() {
                 <label>Reason / Note</label>
                 <input
                   type="text"
-                  placeholder="e.g. Training, Dentist, Personal"
+                  placeholder="e.g. Lunch, Doctor, Training"
                   value={blockReason}
                   onChange={(e) => setBlockReason(e.target.value)}
                   required
@@ -178,7 +224,7 @@ export default function StaffDashboard() {
                 </div>
 
                 <button type="submit" className="btn-save-block">
-                  Save Blocked Time
+                  Save Block
                 </button>
               </form>
             )}
@@ -207,9 +253,9 @@ export default function StaffDashboard() {
           <div className="side-card">
             <h3>My Qualified Services</h3>
             <ul className="qualified-services">
-              <li><Scissors size={14} /> Haircut & Beard Trim</li>
-              <li><Scissors size={14} /> Full Hair Coloring & Balayage</li>
-              <li><Scissors size={14} /> Deep Conditioning Hair Spa</li>
+              <li><Scissors size={14} /> Haircut & Styling</li>
+              <li><Scissors size={14} /> Hair Coloring (Balayage)</li>
+              <li><Scissors size={14} /> Hair Spa & Scalp Therapy</li>
             </ul>
           </div>
         </div>

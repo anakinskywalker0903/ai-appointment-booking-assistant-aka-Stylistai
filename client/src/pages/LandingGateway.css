@@ -1,0 +1,248 @@
+.gateway-page {
+  min-height: calc(100vh - 80px);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gateway-hero {
+  text-align: center;
+  max-width: 760px;
+  margin-bottom: 40px;
+}
+
+.gateway-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-white);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-sm);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--orange);
+  margin-bottom: 16px;
+}
+
+.gateway-title {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin-bottom: 16px;
+}
+
+.gateway-title span {
+  color: var(--orange);
+}
+
+.gateway-sub {
+  font-size: 16px;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Active session card if already signed in */
+.active-session-banner {
+  width: 100%;
+  max-width: 800px;
+  background: #eff6ff;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  padding: 16px 24px;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.active-session-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.active-session-avatar {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 800;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-continue-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--charcoal-dark);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Role Selection Cards */
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  width: 100%;
+  max-width: 1100px;
+  margin-bottom: 40px;
+}
+
+.role-card {
+  background: var(--surface-white);
+  border: var(--border-thick);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.role-card:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: 10px 10px 0px var(--charcoal-dark);
+}
+
+.role-card.card-customer {
+  border-top: 6px solid #3b82f6;
+}
+
+.role-card.card-staff {
+  border-top: 6px solid #10b981;
+}
+
+.role-card.card-admin {
+  border-top: 6px solid var(--orange);
+}
+
+.role-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.role-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1.5px solid var(--charcoal-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-customer .role-icon-box { background: #dbeafe; color: #1d4ed8; }
+.card-staff .role-icon-box    { background: #d1fae5; color: #047857; }
+.card-admin .role-icon-box    { background: #ffedd5; color: #c2410c; }
+
+.role-card-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.role-card-tag {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+}
+
+.role-card-desc {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.role-card-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  font-size: 13px;
+}
+
+.role-card-features li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.role-card-features svg {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.btn-enter-role {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  border: var(--border-thick);
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.1s ease;
+}
+
+.card-customer .btn-enter-role { background: #3b82f6; color: #fff; }
+.card-staff .btn-enter-role    { background: #10b981; color: #fff; }
+.card-admin .btn-enter-role    { background: var(--orange); color: #fff; }
+
+.btn-enter-role:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
+}
+
+.gateway-bottom {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.gateway-bottom a {
+  color: var(--orange);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 960px) {
+  .roles-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+  }
+  .gateway-title {
+    font-size: 32px;
+  }
+}

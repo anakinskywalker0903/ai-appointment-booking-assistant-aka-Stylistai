@@ -1,14 +1,22 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, PRESET_ACCOUNTS } from '../../context/AuthContext';
-import { Calendar, User, Shield, Sparkles, LogOut, LogIn } from 'lucide-react';
+import { Calendar, User, Shield, Sparkles, LogOut, LogIn, Repeat } from 'lucide-react';
 import './Navbar.css';
 
 export default function Navbar() {
   const { user, role, isAuthenticated, logout, switchRolePreview } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path) => location.pathname === path;
+
+  const handleRoleSwitch = (roleKey) => {
+    switchRolePreview(roleKey);
+    if (roleKey === 'CUSTOMER') navigate('/dashboard');
+    else if (roleKey === 'STAFF') navigate('/staff');
+    else if (roleKey === 'ADMIN') navigate('/admin');
+  };
 
   return (
     <header className="navbar-container">
@@ -19,53 +27,75 @@ export default function Navbar() {
           <span className="brand-title">Stylist<span>AI</span></span>
         </Link>
 
-        {/* Navigation Links */}
+        {/* Role-Scoped Navigation Links */}
         <nav className="navbar-links">
-          <Link
-            to="/"
-            className={`nav-link ${isActive('/') ? 'active' : ''}`}
-          >
-            <Sparkles size={16} />
-            <span>AI Assistant</span>
-          </Link>
+          {/* If NOT authenticated */}
+          {!isAuthenticated && (
+            <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
+              <span>Select Portal</span>
+            </Link>
+          )}
 
-          <Link
-            to="/dashboard"
-            className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
-          >
-            <Calendar size={16} />
-            <span>Customer Portal</span>
-          </Link>
+          {/* CUSTOMER Links */}
+          {isAuthenticated && role === 'CUSTOMER' && (
+            <>
+              <Link
+                to="/dashboard"
+                className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
+              >
+                <Calendar size={16} />
+                <span>My Appointments</span>
+              </Link>
 
-          <Link
-            to="/staff"
-            className={`nav-link ${isActive('/staff') ? 'active' : ''}`}
-          >
-            <User size={16} />
-            <span>Staff Schedule</span>
-          </Link>
+              <Link
+                to="/ai-booking"
+                className={`nav-link ${isActive('/ai-booking') ? 'active' : ''}`}
+              >
+                <Sparkles size={16} />
+                <span>AI Booking Assistant</span>
+              </Link>
+            </>
+          )}
 
-          <Link
-            to="/admin"
-            className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-          >
-            <Shield size={16} />
-            <span>Admin Portal</span>
-          </Link>
+          {/* STAFF Links */}
+          {isAuthenticated && role === 'STAFF' && (
+            <Link
+              to="/staff"
+              className={`nav-link ${isActive('/staff') ? 'active' : ''}`}
+            >
+              <User size={16} />
+              <span>My Stylist Schedule</span>
+            </Link>
+          )}
+
+          {/* ADMIN Links */}
+          {isAuthenticated && role === 'ADMIN' && (
+            <Link
+              to="/admin"
+              className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+            >
+              <Shield size={16} />
+              <span>Admin Management</span>
+            </Link>
+          )}
         </nav>
 
-        {/* User & Role Switcher */}
+        {/* User & Role Switcher Actions */}
         <div className="navbar-actions">
-          {/* Quick Demo Role Switcher */}
-          <div className="role-switcher" title="Simulate different roles for development & testing">
-            <span className="role-switcher-label">Dev Role:</span>
+          {/* Quick Switcher between Customer / Staff / Admin */}
+          <div className="role-switcher">
+            <span className="role-switcher-label">
+              <Repeat size={12} style={{ display: 'inline', marginRight: 4 }} />
+              Role:
+            </span>
             <div className="role-buttons">
               {Object.keys(PRESET_ACCOUNTS).map((key) => (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => switchRolePreview(key)}
+                  onClick={() => handleRoleSwitch(key)}
                   className={`role-btn ${role === key ? 'active' : ''}`}
+                  title={`Switch active view to ${key}`}
                 >
                   {key.charAt(0) + key.slice(1).toLowerCase()}
                 </button>
@@ -81,9 +111,12 @@ export default function Navbar() {
               </div>
               <button
                 type="button"
-                onClick={logout}
+                onClick={() => {
+                  logout();
+                  navigate('/');
+                }}
                 className="logout-btn"
-                title="Log out"
+                title="Sign out"
               >
                 <LogOut size={16} />
               </button>

@@ -64,6 +64,20 @@
 .btn-toggle-on { background: #fee2e2; color: #991b1b; }
 .btn-toggle-off { background: #dcfce7; color: #166534; }
 
+.staff-feedback-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #dcfce7;
+  border: 1.5px solid #16a34a;
+  color: #166534;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
 .staff-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -107,6 +121,12 @@
   border: 1px solid var(--charcoal-dark);
 }
 
+.empty-state-staff {
+  text-align: center;
+  padding: 48px 16px;
+  color: #666;
+}
+
 .timeline-cards {
   display: flex;
   flex-direction: column;
@@ -118,7 +138,7 @@
   border: 1.5px solid var(--charcoal-dark);
   border-radius: 6px;
   overflow: hidden;
-  background: var(--surface-low);
+  background: var(--surface-white);
 }
 
 .timeline-time {
@@ -131,49 +151,117 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 120px;
   text-align: center;
 }
 
 .timeline-content {
-  padding: 14px 18px;
+  padding: 16px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .client-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
+  align-items: flex-start;
 }
 
 .client-name {
   font-size: 16px;
   font-weight: 800;
+  display: inline;
+  margin-right: 8px;
 }
 
-.service-tag {
-  font-size: 11px;
-  font-weight: 700;
-  background: var(--orange);
-  color: #fff;
-  padding: 2px 8px;
+.client-role-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 2px 6px;
   border-radius: 4px;
 }
 
-.client-meta {
+.staff-status-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--charcoal-dark);
+}
+
+.badge-confirmed   { background: #dcfce7; color: #166534; }
+.badge-in_progress { background: #fef08a; color: #854d0e; }
+.badge-completed   { background: #e5e7eb; color: #374151; }
+.badge-cancelled   { background: #fee2e2; color: #991b1b; }
+.badge-pending     { background: #fef3c7; color: #92400e; }
+
+.client-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   font-size: 12px;
   color: #666;
-  margin-bottom: 8px;
+}
+
+.service-assigned-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--charcoal-dark);
+  background: var(--surface-low);
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: fit-content;
 }
 
 .client-notes {
   font-size: 12px;
-  background: #fff;
+  background: #fdf6ec;
   padding: 8px 10px;
   border-radius: 4px;
-  border-left: 3px solid var(--teal);
+  border-left: 3px solid var(--orange);
+  color: #444;
+}
+
+.staff-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed #eee;
+}
+
+.btn-status-action {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--charcoal-dark);
+  cursor: pointer;
+}
+
+.btn-status-action.start {
+  background: #fef08a;
+  color: #713f12;
+}
+
+.btn-status-action.complete {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.btn-status-action.cancel {
+  background: #fff;
+  color: var(--error);
+  margin-left: auto;
 }
 
 .btn-add-block {

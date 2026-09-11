@@ -26,7 +26,29 @@
 
 .header-actions {
   display: flex;
+  align-items: center;
   gap: 12px;
+}
+
+.btn-book-direct {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--charcoal-dark);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 18px;
+  border: var(--border-thick);
+  box-shadow: var(--shadow-sm);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.btn-book-direct:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-assistant {
@@ -39,15 +61,15 @@
   font-size: 14px;
   padding: 10px 18px;
   border: var(--border-thick);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   border-radius: 6px;
   text-decoration: none;
   transition: transform 0.1s ease;
 }
 
 .btn-assistant:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-lg);
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-md);
 }
 
 .feedback-banner {
@@ -164,6 +186,7 @@
   border-radius: 4px;
   border-left: 3px solid var(--orange);
   color: #555;
+  margin-top: 4px;
 }
 
 .card-actions {
@@ -230,5 +253,114 @@
   text-decoration: none;
   border: var(--border-thick);
   border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--surface-white);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-lg);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid #eee;
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  line-height: 1;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.modal-form-group select,
+.modal-form-group input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid var(--charcoal-dark);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--surface-low);
+}
+
+.modal-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-modal-cancel {
+  background: var(--surface-low);
+  border: 1.5px solid var(--charcoal-dark);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-modal-submit {
+  background: var(--orange);
+  color: #fff;
+  border: var(--border-thick);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
   box-shadow: var(--shadow-sm);
 }

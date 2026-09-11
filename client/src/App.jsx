@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AppointmentProvider } from './context/AppointmentContext';
 import Navbar from './components/shared/Navbar';
 import ProtectedRoute from './components/shared/ProtectedRoute';
+import LandingGateway from './pages/LandingGateway';
 import ChatPage from './pages/ChatPage';
 import AdminPage from './pages/AdminPage';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
@@ -13,52 +15,66 @@ import RegisterPage from './pages/auth/RegisterPage';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <div className="app-shell">
-          <Navbar />
-          <main className="app-content">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<ChatPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+      <AppointmentProvider>
+        <BrowserRouter>
+          <div className="app-shell">
+            <Navbar />
+            <main className="app-content">
+              <Routes>
+                {/* Landing & Portal Gateway */}
+                <Route path="/" element={<LandingGateway />} />
 
-              {/* Customer Portal */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['CUSTOMER', 'ADMIN']}>
-                    <CustomerDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Authentication */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
 
-              {/* Staff Portal */}
-              <Route
-                path="/staff"
-                element={
-                  <ProtectedRoute allowedRoles={['STAFF', 'ADMIN']}>
-                    <StaffDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Customer Portal */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={['CUSTOMER', 'ADMIN']}>
+                      <CustomerDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Business Admin Portal */}
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <AdminPage />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Customer AI Booking Assistant */}
+                <Route
+                  path="/ai-booking"
+                  element={
+                    <ProtectedRoute allowedRoles={['CUSTOMER', 'ADMIN']}>
+                      <ChatPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-        </div>
-      </BrowserRouter>
+                {/* Staff Portal */}
+                <Route
+                  path="/staff"
+                  element={
+                    <ProtectedRoute allowedRoles={['STAFF', 'ADMIN']}>
+                      <StaffDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Business Admin Portal */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                      <AdminPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+          </div>
+        </BrowserRouter>
+      </AppointmentProvider>
     </AuthProvider>
   );
 }

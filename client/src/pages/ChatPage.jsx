@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
-import ChatHeader        from '../components/chat/ChatHeader';
 import ChatHero          from '../components/chat/ChatHero';
 import ChatWindow        from '../components/chat/ChatWindow';
 import ChatInput         from '../components/chat/ChatInput';
@@ -8,6 +8,9 @@ import BookingCloudPanel from '../components/chat/BookingCloudPanel';
 import ClickSpark        from '../components/shared/ClickSpark';
 import { speakText, stopSpeaking } from '../services/ttsService';
 import { sendBookingEmail } from '../services/emailService';
+import { useAuth } from '../context/AuthContext';
+import { useAppointments } from '../context/AppointmentContext';
+import { ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 import './ChatPage.css';
 
 const WELCOME_MSG = {
@@ -17,6 +20,9 @@ const WELCOME_MSG = {
 };
 
 export default function ChatPage() {
+  const { user } = useAuth();
+  const { bookAppointment } = useAppointments();
+
   const [messages,       setMessages]       = useState([WELCOME_MSG]);
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState(null);
@@ -72,7 +78,7 @@ export default function ChatPage() {
       setPendingBooking(data.pendingBooking || null);
       if (data.intent) setLatestIntent(data.intent);
 
-      // 1. Text-to-Speech Output (Free Web Speech API)
+      // 1. Text-to-Speech Output
       if (isVoiceEnabled && data.message) {
         speakText(data.message);
       }
@@ -80,14 +86,26 @@ export default function ChatPage() {
       // 2. EmailJS Confirmation Email Dispatch
       if (data.appointment) {
         sendBookingEmail(data.appointment);
+
+        // Sync with local shared appointment store
+        bookAppointment({
+          customerName: data.appointment.customer_name || user?.name || 'Customer',
+          customerEmail: data.appointment.customer_email || user?.email || 'customer@example.com',
+          serviceName: data.appointment.services?.name || 'Haircut',
+          serviceDuration: data.appointment.services?.duration_minutes || 45,
+          employeeName: data.appointment.employees?.name || 'Sarah Jenkins',
+          date: data.appointment.appointment_date,
+          time: data.appointment.appointment_time,
+          notes: data.appointment.notes || 'Booked via AI Assistant',
+        });
       }
 
     } catch (err) {
-      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+      setError(err.response?.data?.error || 'AI service unavailable. You can also book directly from the Customer Portal!');
     } finally {
       setLoading(false);
     }
-  }, [loading, pendingBooking, buildHistory, isVoiceEnabled]);
+  }, [loading, pendingBooking, buildHistory, isVoiceEnabled, bookAppointment, user]);
 
   const handleConfirm = () => sendMessage('Yes, please confirm the appointment.');
   const handleCancel  = () => sendMessage('No, cancel this booking.');
@@ -110,10 +128,59 @@ export default function ChatPage() {
       duration={400}
     >
       <div className="chat-page">
-        <ChatHeader
-          isVoiceEnabled={isVoiceEnabled}
-          onToggleVoice={handleToggleVoice}
-        />
+        {/* Clean Chat Toolbar */}
+        <div style={{
+          maxWidth: 1320,
+          margin: '12px auto 0 auto',
+          padding: '0 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+        }}>
+          <Link
+            to="/dashboard"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: 'none',
+              color: 'var(--charcoal-dark)',
+              background: 'var(--surface-white)',
+              padding: '6px 12px',
+              borderRadius: 6,
+              border: '1.5px solid var(--charcoal-dark)',
+              boxShadow: '2px 2px 0px var(--charcoal-dark)'
+            }}
+          >
+            <ArrowLeft size={15} />
+            <span>Back to Appointments</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={handleToggleVoice}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+              background: isVoiceEnabled ? 'var(--orange)' : 'var(--surface-white)',
+              color: isVoiceEnabled ? '#fff' : 'var(--charcoal-dark)',
+              padding: '6px 12px',
+              borderRadius: 6,
+              border: '1.5px solid var(--charcoal-dark)',
+              boxShadow: '2px 2px 0px var(--charcoal-dark)'
+            }}
+          >
+            {isVoiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            <span>{isVoiceEnabled ? 'VOICE ON' : 'MUTED'}</span>
+          </button>
+        </div>
 
         <main className="chat-main">
           <ChatHero />
