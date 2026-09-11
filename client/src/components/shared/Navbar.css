@@ -83,44 +83,27 @@
   gap: 12px;
 }
 
-.role-switcher {
-  display: flex;
+.btn-persona-trigger {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: var(--surface-low);
-  padding: 4px 8px;
+  color: var(--charcoal-dark);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 12px;
   border: 1.5px solid var(--charcoal-dark);
   border-radius: 6px;
-}
-
-.role-switcher-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #666;
-}
-
-.role-buttons {
-  display: flex;
-  gap: 4px;
-}
-
-.role-btn {
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 7px;
-  background: var(--surface-white);
-  border: 1px solid var(--charcoal-dark);
-  border-radius: 4px;
+  box-shadow: 2px 2px 0px var(--charcoal-dark);
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.12s ease;
 }
 
-.role-btn.active {
-  background: var(--orange);
-  color: #fff;
-  border-color: var(--charcoal-dark);
+.btn-persona-trigger:hover {
+  background: var(--surface-high);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px var(--charcoal-dark);
 }
 
 .user-profile-badge {

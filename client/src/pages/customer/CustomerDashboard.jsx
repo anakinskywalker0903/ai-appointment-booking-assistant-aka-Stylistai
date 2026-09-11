@@ -1,28 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppointments } from '../../context/AppointmentContext';
-import { Calendar, Clock, AlertCircle, CheckCircle, XCircle, Plus, Sparkles, Scissors } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle, XCircle, Sparkles, Scissors, Bot } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './CustomerDashboard.css';
-
-const AVAILABLE_SERVICES = [
-  { id: 's1', name: 'Haircut & Styling', duration: 45, price: '$35.00' },
-  { id: 's2', name: 'Hair Coloring (Balayage)', duration: 120, price: '$95.00' },
-  { id: 's3', name: 'Hair Spa & Scalp Therapy', duration: 60, price: '$50.00' },
-  { id: 's4', name: 'Classic Beard Grooming', duration: 30, price: '$25.00' },
-];
-
-const AVAILABLE_STYLISTS = [
-  { id: 'emp-1', name: 'Sarah Jenkins', role: 'Senior Hair Stylist' },
-  { id: 'emp-2', name: 'Emma Watson', role: 'Hair & Beauty Expert' },
-  { id: 'emp-3', name: 'David Miller', role: 'Master Barber' },
-];
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const {
     getAppointmentsForCustomer,
-    bookAppointment,
     cancelAppointment,
     rescheduleAppointment,
   } = useAppointments();
@@ -32,42 +18,10 @@ export default function CustomerDashboard() {
   const [filter, setFilter] = useState('upcoming');
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
-  // New Booking Modal State
-  const [showBookModal, setShowBookModal] = useState(false);
-  const [selectedService, setSelectedService] = useState(AVAILABLE_SERVICES[0]);
-  const [selectedStylist, setSelectedStylist] = useState(AVAILABLE_STYLISTS[0]);
-  const [bookDate, setBookDate] = useState('2026-09-17');
-  const [bookTime, setBookTime] = useState('15:00');
-  const [bookNotes, setBookNotes] = useState('');
-
   // Reschedule Modal State
   const [rescheduleApt, setRescheduleApt] = useState(null);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('14:00');
-
-  const handleCreateBooking = (e) => {
-    e.preventDefault();
-    const newApt = bookAppointment({
-      customerName: user?.name || 'Customer',
-      customerEmail: user?.email || 'customer@example.com',
-      customerPhone: user?.phone || '',
-      serviceName: selectedService.name,
-      serviceDuration: selectedService.duration,
-      servicePrice: selectedService.price,
-      employeeName: selectedStylist.name,
-      employeeRole: selectedStylist.role,
-      date: bookDate,
-      time: bookTime,
-      notes: bookNotes,
-    });
-
-    setShowBookModal(false);
-    setBookNotes('');
-    setFeedbackMessage(
-      `Appointment confirmed with ${newApt.employeeName} on ${newApt.date} at ${newApt.time}! It is now saved in their schedule.`
-    );
-    setTimeout(() => setFeedbackMessage(null), 6000);
-  };
 
   const handleOpenReschedule = (apt) => {
     setRescheduleApt(apt);
@@ -98,28 +52,21 @@ export default function CustomerDashboard() {
 
   return (
     <div className="dashboard-page">
+      {/* Top Header */}
       <div className="dashboard-header">
         <div>
           <h1 className="dashboard-title">Customer Portal</h1>
           <p className="dashboard-subtitle">
             Welcome, <strong>{user?.name || 'Customer'}</strong> ({user?.email}).
-            Bookings are saved locally and synced with your chosen stylist.
+            Track, reschedule, or cancel your appointments below.
           </p>
         </div>
 
+        {/* AI Booking Call-To-Action (No manual form!) */}
         <div className="header-actions">
-          <button
-            type="button"
-            onClick={() => setShowBookModal(true)}
-            className="btn-book-direct"
-          >
-            <Plus size={16} />
-            <span>Book Treatment</span>
-          </button>
-
-          <Link to="/ai-booking" className="btn-assistant">
-            <Sparkles size={16} />
-            <span>AI Assistant</span>
+          <Link to="/ai-booking" className="btn-assistant-hero">
+            <Bot size={18} />
+            <span>Book with AI Assistant</span>
           </Link>
         </div>
       </div>
@@ -130,6 +77,20 @@ export default function CustomerDashboard() {
           <span>{feedbackMessage}</span>
         </div>
       )}
+
+      {/* AI Booking Banner / Tip */}
+      <div className="ai-booking-banner">
+        <div className="ai-banner-left">
+          <Sparkles size={20} className="sparkle-icon" />
+          <div>
+            <strong>Need to schedule a new treatment?</strong>
+            <p>Our intelligent AI Assistant checks real-time stylist availability, handles preferences, and confirms appointments seamlessly.</p>
+          </div>
+        </div>
+        <Link to="/ai-booking" className="btn-ai-banner-cta">
+          Talk to AI Assistant
+        </Link>
+      </div>
 
       {/* Filter Tabs */}
       <div className="filter-tabs">
@@ -162,14 +123,10 @@ export default function CustomerDashboard() {
           <div className="empty-state">
             <Calendar size={48} className="empty-icon" />
             <h3>No appointments found</h3>
-            <p>You don't have any appointments in this view.</p>
-            <button
-              type="button"
-              onClick={() => setShowBookModal(true)}
-              className="btn-primary-small"
-            >
-              <Plus size={16} /> Book an Appointment
-            </button>
+            <p>You don't have any appointments in this view. Use the AI Assistant to book your next session!</p>
+            <Link to="/ai-booking" className="btn-primary-small">
+              <Bot size={16} /> Book with AI Assistant
+            </Link>
           </div>
         ) : (
           filteredAppointments.map((apt) => (
@@ -201,7 +158,7 @@ export default function CustomerDashboard() {
                 </div>
                 {apt.notes && (
                   <div className="detail-notes">
-                    <strong>My Request:</strong> <em>"{apt.notes}"</em>
+                    <strong>Note:</strong> <em>"{apt.notes}"</em>
                   </div>
                 )}
               </div>
@@ -228,104 +185,6 @@ export default function CustomerDashboard() {
           ))
         )}
       </div>
-
-      {/* Direct Booking Modal */}
-      {showBookModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Book an Appointment</h2>
-              <button
-                type="button"
-                onClick={() => setShowBookModal(false)}
-                className="modal-close-btn"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateBooking} className="modal-form">
-              <div className="modal-form-group">
-                <label>Select Treatment</label>
-                <select
-                  value={selectedService.id}
-                  onChange={(e) => {
-                    const found = AVAILABLE_SERVICES.find(s => s.id === e.target.value);
-                    if (found) setSelectedService(found);
-                  }}
-                >
-                  {AVAILABLE_SERVICES.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.duration} min) - {s.price}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="modal-form-group">
-                <label>Select Stylist</label>
-                <select
-                  value={selectedStylist.id}
-                  onChange={(e) => {
-                    const found = AVAILABLE_STYLISTS.find(st => st.id === e.target.value);
-                    if (found) setSelectedStylist(found);
-                  }}
-                >
-                  {AVAILABLE_STYLISTS.map(st => (
-                    <option key={st.id} value={st.id}>
-                      {st.name} ({st.role})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="modal-form-row">
-                <div className="modal-form-group">
-                  <label>Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={bookDate}
-                    onChange={(e) => setBookDate(e.target.value)}
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label>Time</label>
-                  <input
-                    type="time"
-                    required
-                    value={bookTime}
-                    onChange={(e) => setBookTime(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-form-group">
-                <label>Notes & Requests</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Skin fade, sensitive skin, beard shape"
-                  value={bookNotes}
-                  onChange={(e) => setBookNotes(e.target.value)}
-                />
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setShowBookModal(false)}
-                  className="btn-modal-cancel"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn-modal-submit">
-                  Confirm Booking
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Reschedule Modal */}
       {rescheduleApt && (
