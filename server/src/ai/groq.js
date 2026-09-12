@@ -5,7 +5,21 @@ import { buildSystemPrompt } from './prompts.js';
 
 dotenv.config();
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let _groq = null;
+function getGroqClient() {
+  if (!_groq) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      throw new Error('The GROQ_API_KEY environment variable is missing or empty. Please set it in server/.env to use AI features.');
+    }
+    _groq = new Groq({ apiKey });
+  }
+  return _groq;
+}
+
+if (!process.env.GROQ_API_KEY && process.env.NODE_ENV !== 'test') {
+  console.warn('⚠️ [AI Warning] Missing GROQ_API_KEY. AI chat intent extraction will fail unless configured.');
+}
 
 // ── Zod schema to validate Groq's JSON output ───────────────────────────────
 
@@ -73,6 +87,7 @@ function convertHistory(history) {
  * @returns {Object} { intent, usage }
  */
 export async function extractIntent(userMessage, history, services, employees = []) {
+  const groq = getGroqClient();
   const systemPrompt = buildSystemPrompt(services, employees) + JSON_FORMAT_INSTRUCTIONS;
   const messages = [
     { role: 'system', content: systemPrompt },
