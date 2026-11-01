@@ -66,13 +66,39 @@ export default function Navbar() {
 
             {/* ADMIN Links */}
             {isAuthenticated && role === 'ADMIN' && (
-              <Link
-                to="/admin"
-                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-              >
-                <Shield size={16} />
-                <span>Admin Management</span>
-              </Link>
+              <>
+                <Link
+                  to="/admin"
+                  className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+                >
+                  <Shield size={16} />
+                  <span>Admin Hub</span>
+                </Link>
+
+                <Link
+                  to="/ai-booking"
+                  className={`nav-link ${isActive('/ai-booking') ? 'active' : ''}`}
+                >
+                  <Sparkles size={16} />
+                  <span>AI Assistant</span>
+                </Link>
+
+                <Link
+                  to="/staff"
+                  className={`nav-link ${isActive('/staff') ? 'active' : ''}`}
+                >
+                  <User size={16} />
+                  <span>Staff Portal</span>
+                </Link>
+
+                <Link
+                  to="/dashboard"
+                  className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
+                >
+                  <Calendar size={16} />
+                  <span>Customer View</span>
+                </Link>
+              </>
             )}
           </nav>
 

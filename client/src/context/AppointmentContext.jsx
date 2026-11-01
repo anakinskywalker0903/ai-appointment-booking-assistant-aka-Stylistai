@@ -2,7 +2,150 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AppointmentContext = createContext(null);
 
-const STORAGE_KEY = 'stylistai_appointments_v2';
+const STORAGE_KEY_APPOINTMENTS = 'stylistai_appointments_v2';
+const STORAGE_KEY_SERVICES     = 'stylistai_services_v2';
+const STORAGE_KEY_STAFF        = 'stylistai_staff_v2';
+const STORAGE_KEY_SETTINGS     = 'stylistai_settings_v2';
+const STORAGE_KEY_BLOCKED      = 'stylistai_blocked_v2';
+
+const SEED_BLOCKED_TIMES = [
+  { id: 'b1', employeeName: 'Sarah Jenkins', reason: 'Lunch Break', start: '13:00', end: '14:00', recurring: 'Daily' },
+  { id: 'b2', employeeName: 'David Miller', reason: 'Supply Restock', start: '12:00', end: '12:45', recurring: 'Daily' },
+];
+
+const SEED_SERVICES = [
+  {
+    id: 'srv-1',
+    name: 'Haircut & Styling',
+    duration: 45,
+    price: 45,
+    description: 'Classic precision haircut, luxury wash, and blow dry finish.',
+    active: true,
+  },
+  {
+    id: 'srv-2',
+    name: 'Hair Coloring (Balayage)',
+    duration: 120,
+    price: 120,
+    description: 'Full custom hair coloring, multi-dimensional balayage, or highlights.',
+    active: true,
+  },
+  {
+    id: 'srv-3',
+    name: 'Hair Spa & Scalp Therapy',
+    duration: 60,
+    price: 65,
+    description: 'Deep conditioning scalp massage & organic restorative botanical mask.',
+    active: true,
+  },
+  {
+    id: 'srv-4',
+    name: 'Classic Beard Grooming',
+    duration: 30,
+    price: 30,
+    description: 'Precision beard shaping, edge razor detailing, and aromatic hot towel.',
+    active: true,
+  },
+  {
+    id: 'srv-5',
+    name: 'Deep Cleansing Facial',
+    duration: 60,
+    price: 75,
+    description: 'Exfoliation, steam pore purification, and rejuvenating collagen infusion.',
+    active: true,
+  },
+  {
+    id: 'srv-6',
+    name: 'Precision Skin Fade & Taper',
+    duration: 45,
+    price: 40,
+    description: 'Surgical zero-fade, razor neckline taper, and textured top styling.',
+    active: true,
+  },
+  {
+    id: 'srv-7',
+    name: 'Silk Press & Keratin Smoothing',
+    duration: 90,
+    price: 110,
+    description: 'Thermal straightening, keratin infusion treatment, and high-shine blowout.',
+    active: true,
+  },
+  {
+    id: 'srv-8',
+    name: 'Express Beard Sculpting',
+    duration: 20,
+    price: 20,
+    description: 'Quick lineup, contour edge sculpting, and organic beard oil treatment.',
+    active: true,
+  },
+];
+
+const SEED_STAFF = [
+  {
+    id: 'emp-1',
+    name: 'Sarah Jenkins',
+    role: 'Senior Hair Stylist',
+    bio: 'Master colorist and modern cut specialist with 8 years of salon artistry.',
+    active: true,
+    assignedServiceIds: ['srv-1', 'srv-2', 'srv-3', 'srv-7'],
+    hours: '09:00 AM - 05:00 PM',
+  },
+  {
+    id: 'emp-2',
+    name: 'Emma Watson',
+    role: 'Hair & Beauty Expert',
+    bio: 'Renowned expert in botanical hair spa treatments, facials, and bridal styling.',
+    active: true,
+    assignedServiceIds: ['srv-1', 'srv-3', 'srv-5'],
+    hours: '10:00 AM - 06:00 PM',
+  },
+  {
+    id: 'emp-3',
+    name: 'David Miller',
+    role: 'Master Barber',
+    bio: 'Artisan barber dedicated to precision skin fades, beard sculpting, and hot towel care.',
+    active: true,
+    assignedServiceIds: ['srv-1', 'srv-4', 'srv-6', 'srv-8'],
+    hours: '09:00 AM - 06:00 PM',
+  },
+  {
+    id: 'emp-4',
+    name: 'Aria Chen',
+    role: 'Creative Color Director',
+    bio: 'Celebrity colorist specializing in vivid pastel balayage, dimensional foils, and Asian hair textures.',
+    active: true,
+    assignedServiceIds: ['srv-1', 'srv-2', 'srv-3', 'srv-7'],
+    hours: '11:00 AM - 07:00 PM',
+  },
+  {
+    id: 'emp-5',
+    name: 'Marcus Rivera',
+    role: 'Grooming & Fade Specialist',
+    bio: 'Razor specialist certified in straight-edge shaving, afro-textured fading, and bespoke beard trims.',
+    active: true,
+    assignedServiceIds: ['srv-1', 'srv-4', 'srv-6', 'srv-8'],
+    hours: '09:00 AM - 05:00 PM',
+  },
+  {
+    id: 'emp-6',
+    name: 'Chloe Dubois',
+    role: 'Senior Holistic Esthetician',
+    bio: 'Licensed dermatological esthetician with expertise in organic peels, lymphatic drainage, and scalp health.',
+    active: true,
+    assignedServiceIds: ['srv-3', 'srv-5'],
+    hours: '10:00 AM - 06:00 PM',
+  },
+];
+
+const SEED_SETTINGS = {
+  businessName: 'StylistAI Salon & Spa',
+  openTime: '09:00',
+  closeTime: '18:00',
+  closedDays: ['Sunday'],
+  slotDurationMinutes: 45,
+  currency: '$',
+  cancellationNoticeHours: 2,
+};
 
 const SEED_APPOINTMENTS = [
   {
@@ -72,30 +215,133 @@ const SEED_APPOINTMENTS = [
 ];
 
 export function AppointmentProvider({ children }) {
+  // ── Appointments ──
   const [appointments, setAppointments] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        return JSON.parse(saved);
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_APPOINTMENTS));
-      return SEED_APPOINTMENTS;
+      const saved = localStorage.getItem(STORAGE_KEY_APPOINTMENTS);
+      return saved ? JSON.parse(saved) : SEED_APPOINTMENTS;
     } catch {
       return SEED_APPOINTMENTS;
     }
   });
 
+  // ── Services Catalog ──
+  const [services, setServices] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SERVICES);
+      if (!saved) return SEED_SERVICES;
+      const parsed = JSON.parse(saved);
+      // Seamlessly merge any new seeds if not present
+      const existingIds = new Set(parsed.map(s => s.id));
+      const missingSeeds = SEED_SERVICES.filter(s => !existingIds.has(s.id));
+      return [...parsed, ...missingSeeds];
+    } catch {
+      return SEED_SERVICES;
+    }
+  });
+
+  // ── Staff List ──
+  const [staffList, setStaffList] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_STAFF);
+      if (!saved) return SEED_STAFF;
+      const parsed = JSON.parse(saved);
+      // Seamlessly merge any new seeds if not present
+      const existingIds = new Set(parsed.map(s => s.id));
+      const missingSeeds = SEED_STAFF.filter(s => !existingIds.has(s.id));
+      return [...parsed, ...missingSeeds];
+    } catch {
+      return SEED_STAFF;
+    }
+  });
+
+  // ── Business Settings ──
+  const [businessSettings, setBusinessSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SETTINGS);
+      return saved ? JSON.parse(saved) : SEED_SETTINGS;
+    } catch {
+      return SEED_SETTINGS;
+    }
+  });
+
+  // ── Blocked Times (Staff Breaks & Time Off) ──
+  const [blockedTimes, setBlockedTimes] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_BLOCKED);
+      return saved ? JSON.parse(saved) : SEED_BLOCKED_TIMES;
+    } catch {
+      return SEED_BLOCKED_TIMES;
+    }
+  });
+
+  // Persistence effects
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appointments));
+      localStorage.setItem(STORAGE_KEY_APPOINTMENTS, JSON.stringify(appointments));
     } catch (err) {
-      console.error('Failed to persist appointments to localStorage:', err);
+      console.error('Failed to persist appointments:', err);
     }
   }, [appointments]);
 
-  /**
-   * Book a new appointment
-   */
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SERVICES, JSON.stringify(services));
+    } catch (err) {
+      console.error('Failed to persist services:', err);
+    }
+  }, [services]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(staffList));
+    } catch (err) {
+      console.error('Failed to persist staff:', err);
+    }
+  }, [staffList]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(businessSettings));
+    } catch (err) {
+      console.error('Failed to persist business settings:', err);
+    }
+  }, [businessSettings]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_BLOCKED, JSON.stringify(blockedTimes));
+    } catch (err) {
+      console.error('Failed to persist blocked times:', err);
+    }
+  }, [blockedTimes]);
+
+  // Real-time cross-tab synchronization listener
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (!e.newValue) return;
+      try {
+        if (e.key === STORAGE_KEY_APPOINTMENTS) {
+          setAppointments(JSON.parse(e.newValue));
+        } else if (e.key === STORAGE_KEY_SERVICES) {
+          setServices(JSON.parse(e.newValue));
+        } else if (e.key === STORAGE_KEY_STAFF) {
+          setStaffList(JSON.parse(e.newValue));
+        } else if (e.key === STORAGE_KEY_SETTINGS) {
+          setBusinessSettings(JSON.parse(e.newValue));
+        } else if (e.key === STORAGE_KEY_BLOCKED) {
+          setBlockedTimes(JSON.parse(e.newValue));
+        }
+      } catch (err) {
+        console.error('Cross-tab synchronization error:', err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // ── Appointment Methods ──
   const bookAppointment = ({
     customerName,
     customerEmail,
@@ -130,9 +376,6 @@ export function AppointmentProvider({ children }) {
     return newAppointment;
   };
 
-  /**
-   * Cancel an appointment
-   */
   const cancelAppointment = (appointmentId) => {
     setAppointments((prev) =>
       prev.map((apt) =>
@@ -141,9 +384,6 @@ export function AppointmentProvider({ children }) {
     );
   };
 
-  /**
-   * Reschedule an appointment
-   */
   const rescheduleAppointment = (appointmentId, newDate, newTime) => {
     setAppointments((prev) =>
       prev.map((apt) =>
@@ -154,9 +394,6 @@ export function AppointmentProvider({ children }) {
     );
   };
 
-  /**
-   * Update status (e.g. 'confirmed', 'in_progress', 'completed', 'cancelled')
-   */
   const updateAppointmentStatus = (appointmentId, status) => {
     setAppointments((prev) =>
       prev.map((apt) =>
@@ -165,30 +402,125 @@ export function AppointmentProvider({ children }) {
     );
   };
 
-  /**
-   * Filter appointments for a specific customer
-   */
   const getAppointmentsForCustomer = (email) => {
     if (!email) return [];
-    return appointments.filter(
-      (apt) => apt.customerEmail.toLowerCase() === email.toLowerCase()
+    const target = email.toLowerCase().trim();
+    return appointments.filter((apt) => {
+      const aptEmail = (apt.customerEmail || apt.customer_email || '').toLowerCase().trim();
+      return aptEmail === target;
+    });
+  };
+
+  const getAppointmentsForStaff = (staffName) => {
+    if (!staffName) return [];
+    const target = staffName.toLowerCase().trim();
+    return appointments.filter((apt) => {
+      const name = (apt.employeeName || apt.employees?.name || '').toLowerCase().trim();
+      if (!name) return false;
+      return name.includes(target) || target.includes(name);
+    });
+  };
+
+  // ── Service Catalog Methods ──
+  const addService = ({ name, duration, price, description = '' }) => {
+    const newService = {
+      id: 'srv-' + Date.now().toString(36),
+      name,
+      duration: Number(duration),
+      price: Number(price),
+      description,
+      active: true,
+    };
+    setServices((prev) => [...prev, newService]);
+    return newService;
+  };
+
+  const updateService = (id, updatedFields) => {
+    setServices((prev) =>
+      prev.map((srv) => (srv.id === id ? { ...srv, ...updatedFields } : srv))
     );
   };
 
-  /**
-   * Filter appointments for a specific staff member
-   */
-  const getAppointmentsForStaff = (staffName) => {
-    if (!staffName) return [];
-    return appointments.filter(
-      (apt) => apt.employeeName.toLowerCase().includes(staffName.toLowerCase()) ||
-               staffName.toLowerCase().includes(apt.employeeName.toLowerCase())
+  const toggleServiceActive = (id) => {
+    setServices((prev) =>
+      prev.map((srv) => (srv.id === id ? { ...srv, active: !srv.active } : srv))
     );
+  };
+
+  const deleteService = (id) => {
+    setServices((prev) => prev.filter((srv) => srv.id !== id));
+    // Also remove from any staff's assigned services
+    setStaffList((prev) =>
+      prev.map((emp) => ({
+        ...emp,
+        assignedServiceIds: emp.assignedServiceIds.filter((sid) => sid !== id),
+      }))
+    );
+  };
+
+  // ── Staff Management Methods ──
+  const addStaff = ({ name, role, bio = '', hours = '09:00 AM - 05:00 PM', assignedServiceIds = [] }) => {
+    const newStaff = {
+      id: 'emp-' + Date.now().toString(36),
+      name,
+      role,
+      bio,
+      active: true,
+      assignedServiceIds,
+      hours,
+    };
+    setStaffList((prev) => [...prev, newStaff]);
+    return newStaff;
+  };
+
+  const updateStaff = (id, updatedFields) => {
+    setStaffList((prev) =>
+      prev.map((emp) => (emp.id === id ? { ...emp, ...updatedFields } : emp))
+    );
+  };
+
+  const toggleStaffActive = (id) => {
+    setStaffList((prev) =>
+      prev.map((emp) => (emp.id === id ? { ...emp, active: !emp.active } : emp))
+    );
+  };
+
+  const assignServicesToStaff = (staffId, serviceIds) => {
+    setStaffList((prev) =>
+      prev.map((emp) =>
+        emp.id === staffId ? { ...emp, assignedServiceIds: serviceIds } : emp
+      )
+    );
+  };
+
+  // ── Blocked Times Methods (Staff Schedule) ──
+  const addBlockedTime = ({ employeeName, reason, start, end, date, recurring = 'One-time' }) => {
+    const newBlock = {
+      id: 'b-' + Date.now().toString(36),
+      employeeName,
+      reason,
+      start,
+      end,
+      date,
+      recurring,
+    };
+    setBlockedTimes((prev) => [...prev, newBlock]);
+    return newBlock;
+  };
+
+  const removeBlockedTime = (id) => {
+    setBlockedTimes((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  // ── Business Settings Methods ──
+  const updateBusinessSettings = (newSettings) => {
+    setBusinessSettings((prev) => ({ ...prev, ...newSettings }));
   };
 
   return (
     <AppointmentContext.Provider
       value={{
+        // Appointments
         appointments,
         bookAppointment,
         cancelAppointment,
@@ -196,6 +528,25 @@ export function AppointmentProvider({ children }) {
         updateAppointmentStatus,
         getAppointmentsForCustomer,
         getAppointmentsForStaff,
+        // Blocked Times / Staff Breaks
+        blockedTimes,
+        addBlockedTime,
+        removeBlockedTime,
+        // Services
+        services,
+        addService,
+        updateService,
+        toggleServiceActive,
+        deleteService,
+        // Staff
+        staffList,
+        addStaff,
+        updateStaff,
+        toggleStaffActive,
+        assignServicesToStaff,
+        // Business Settings
+        businessSettings,
+        updateBusinessSettings,
       }}
     >
       {children}

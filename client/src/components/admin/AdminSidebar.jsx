@@ -1,11 +1,12 @@
-import { Link } from 'react-router-dom';
+import React from 'react';
 
 const NAV_ITEMS = [
   { id: 'overview',      label: 'Overview',      icon: 'dashboard' },
   { id: 'appointments',  label: 'Appointments',  icon: 'event_available' },
-  { id: 'calendar',      label: 'Calendar',      icon: 'calendar_month' },
+  { id: 'services',      label: 'Services',      icon: 'spa' },
   { id: 'staff',         label: 'Staff',         icon: 'badge' },
   { id: 'customers',     label: 'Customers',     icon: 'group' },
+  { id: 'calendar',      label: 'Calendar',      icon: 'calendar_month' },
   { id: 'ai-bookings',   label: 'AI Bookings',   icon: 'smart_toy' },
   { id: 'notifications', label: 'Notifications', icon: 'notifications' },
   { id: 'settings',      label: 'Settings',      icon: 'settings' },
@@ -24,8 +25,6 @@ export default function AdminSidebar({ activeTab = 'overview', onSelectTab, onLo
           <div className="admin-sidebar-sub">Salon Management</div>
         </div>
       </div>
-
-
 
       {/* Main functional nav */}
       <div className="admin-nav-list">

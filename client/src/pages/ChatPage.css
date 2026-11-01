@@ -899,3 +899,74 @@
   .msg-bubble        { padding: 7px 10px; font-size: 0.82rem; }
 }
 
+
+
+/* ── Dynamic Alternatives Chips ────────────────────────────── */
+.slot-alternatives-container {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slot-alternatives-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--charcoal-dark);
+}
+
+.slot-alternatives-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.alt-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--charcoal-dark);
+  cursor: pointer;
+  box-shadow: 2px 2px 0px #000000;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease;
+}
+
+.alt-chip-btn:hover {
+  background: #fff7ed;
+  border-color: #ea580c;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.alt-chip-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #000000;
+}
+
+.alt-chip-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.alt-chip-badge {
+  background: var(--teal);
+  color: #000000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #000000;
+}

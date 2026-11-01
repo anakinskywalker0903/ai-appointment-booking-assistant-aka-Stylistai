@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -54,7 +55,27 @@ export function AuthProvider({ children }) {
   }, [user, token]);
 
   const login = async (email, password) => {
-    // Check preset mock logins or simulate network request
+    // 1. Try real backend API from Workstream A
+    try {
+      const { data } = await api.post('/auth/login', { email, password });
+      if (data?.success && data?.data) {
+        const { token: jwtToken, user: authUser } = data.data;
+        setUser({
+          id: authUser.id,
+          name: authUser.fullName || authUser.name || email.split('@')[0],
+          email: authUser.email,
+          role: authUser.role || 'CUSTOMER',
+          phone: authUser.phone || '',
+          businessId: authUser.businessId,
+        });
+        setToken(jwtToken);
+        return { success: true };
+      }
+    } catch {
+      // Gracefully fall back to local preview mode if backend is offline
+    }
+
+    // 2. Local Fallback authentication
     if (email.includes('admin')) {
       setUser(PRESET_ACCOUNTS.ADMIN);
     } else if (email.includes('sarah') || email.includes('staff')) {
@@ -72,6 +93,33 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (name, email, password, phone) => {
+    // 1. Try real backend API from Workstream A
+    try {
+      const { data } = await api.post('/auth/register', {
+        fullName: name,
+        email,
+        password,
+        phone,
+        role: 'CUSTOMER',
+      });
+      if (data?.success && data?.data) {
+        const { token: jwtToken, user: authUser } = data.data;
+        setUser({
+          id: authUser.id,
+          name: authUser.fullName || name,
+          email: authUser.email,
+          role: authUser.role || 'CUSTOMER',
+          phone: authUser.phone || phone,
+          businessId: authUser.businessId,
+        });
+        setToken(jwtToken);
+        return { success: true };
+      }
+    } catch {
+      // Gracefully fall back to local preview
+    }
+
+    // 2. Local Fallback
     const newUser = {
       id: 'usr-new-' + Date.now(),
       name,
@@ -87,6 +135,10 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setUser(null);
     setToken(null);
+  };
+
+  const updateProfile = (updatedFields) => {
+    setUser(prev => prev ? { ...prev, ...updatedFields } : prev);
   };
 
   const switchRolePreview = (roleKey) => {
@@ -106,6 +158,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        updateProfile,
         switchRolePreview,
       }}
     >

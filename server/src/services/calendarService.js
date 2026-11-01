@@ -67,7 +67,11 @@ export function getCalendarClient() {
   // Automatically update stored tokens when refreshed
   auth.on('tokens', (newTokens) => {
     const current = loadTokens() || {};
-    saveTokens({ ...current, ...newTokens });
+    saveTokens({
+      ...current,
+      ...newTokens,
+      refresh_token: newTokens.refresh_token || current.refresh_token,
+    });
   });
 
   return google.calendar({ version: 'v3', auth });
@@ -93,7 +97,12 @@ export function getAuthUrl() {
 export async function exchangeCodeForTokens(code) {
   const oauth2Client = getOAuthClient();
   const { tokens } = await oauth2Client.getToken(code);
-  saveTokens(tokens);
+  const current = loadTokens() || {};
+  saveTokens({
+    ...current,
+    ...tokens,
+    refresh_token: tokens.refresh_token || current.refresh_token,
+  });
   return { success: true };
 }
 

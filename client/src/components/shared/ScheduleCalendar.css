@@ -1,0 +1,316 @@
+/* Schedule Timetable / Calendar Grid */
+
+.schedule-calendar-container {
+  background: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #f8fafc;
+  border-bottom: 2px solid #000000;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.calendar-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-nav-btn {
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0px #000000;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.cal-nav-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.cal-today-btn {
+  background: var(--orange, #e0533c);
+  color: #ffffff;
+  border: 2px solid #000000;
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px #000000;
+}
+
+.cal-current-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+  font-weight: 900;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.calendar-stylist-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 2px solid #000000;
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 2px 2px 0px #000000;
+}
+
+.calendar-stylist-filter label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cal-select {
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Timetable Grid */
+.timetable-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.timetable-grid {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.timetable-time-header {
+  width: 90px;
+  padding: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-align: center;
+  border-right: 2px solid #000000;
+}
+
+.timetable-staff-header {
+  padding: 12px 14px;
+  background: #1e293b;
+  color: #ffffff;
+  border-right: 2px solid #000000;
+  text-align: left;
+}
+
+.staff-header-name {
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.staff-header-role {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.timetable-row {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.timetable-row:hover {
+  background: #fbfcfe;
+}
+
+.timetable-time-cell {
+  background: #f1f5f9;
+  border-right: 2px solid #000000;
+  text-align: center;
+  padding: 10px 8px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.timetable-slot-cell {
+  padding: 6px 8px;
+  border-right: 1px solid #e2e8f0;
+  vertical-align: top;
+  min-height: 54px;
+}
+
+/* Appointment Blocks */
+.calendar-appt-block {
+  border: 2px solid #000000;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px #000000;
+  transition: transform 0.1s;
+}
+
+.calendar-appt-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 3px 0px #000000;
+}
+
+.status-card-confirmed {
+  background: #e0f2fe;
+}
+
+.status-card-pending {
+  background: #fef3c7;
+}
+
+.appt-block-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.appt-block-time {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.appt-block-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.badge-confirmed {
+  background: #22c55e;
+  color: #ffffff;
+}
+
+.badge-pending {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.appt-block-client {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.appt-block-service {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--orange, #e0533c);
+  margin-top: 2px;
+}
+
+/* Blocked Break Chip */
+.calendar-block-chip {
+  background: #f1f5f9;
+  border: 1.5px dashed #94a3b8;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.calendar-open-slot {
+  height: 48px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.15s;
+}
+
+.calendar-open-slot:hover {
+  background: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.slot-empty-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.calendar-open-slot:hover .slot-empty-label {
+  color: #16a34a;
+}
+
+/* Timetable Legend */
+.timetable-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-top: 2px solid #000000;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-color-box {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1.5px solid #000000;
+}
+
+.confirmed-box {
+  background: #e0f2fe;
+}
+
+.pending-box {
+  background: #fef3c7;
+}
+
+.blocked-box {
+  background: #f1f5f9;
+  border-style: dashed;
+}
+
+.open-box {
+  background: #ffffff;
+  border: 1px dashed #94a3b8;
+}

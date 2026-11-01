@@ -4,7 +4,7 @@
  * onConfirm(id) / onCancel(id)
  * updating: id currently being updated (for loading state)
  */
-export default function AppointmentTimeline({ appointments, onConfirm, onCancel, updating, onViewAll }) {
+export default function AppointmentTimeline({ appointments, onConfirm, onCancel, updating }) {
   function formatTime(t) {
     if (!t) return '';
     const [hh, mm] = t.slice(0, 5).split(':').map(Number);

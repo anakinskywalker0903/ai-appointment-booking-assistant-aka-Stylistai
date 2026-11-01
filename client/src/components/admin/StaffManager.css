@@ -1,0 +1,147 @@
+.staff-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.staff-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.staff-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.staff-roster-card {
+  background: var(--surface-white);
+  border: var(--border-thick);
+  border-radius: 8px;
+  box-shadow: 4px 4px 0px var(--charcoal-dark);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.12s ease;
+}
+
+.staff-roster-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--charcoal-dark);
+}
+
+.staff-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.staff-avatar-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1.5px solid var(--charcoal-dark);
+  background: #eff6ff;
+  color: #1e40af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staff-primary-info {
+  flex: 1;
+}
+
+.staff-name-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--charcoal-dark);
+  margin: 0;
+}
+
+.staff-role-sub {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--orange);
+  margin-top: 2px;
+}
+
+.staff-card-body {
+  border-top: 1.5px dashed #e5e5e5;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.staff-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #444;
+}
+
+.staff-services-section {
+  margin-top: 4px;
+}
+
+.staff-services-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--charcoal-light);
+  margin-bottom: 6px;
+}
+
+.staff-services-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.service-chip {
+  background: var(--surface-low);
+  border: 1px solid var(--charcoal-dark);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+}
+
+.staff-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1.5px solid #eaeaea;
+}
+
+.service-checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--charcoal-dark);
+  border-radius: 6px;
+  padding: 10px;
+  background: var(--surface-low);
+}
+
+.service-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}

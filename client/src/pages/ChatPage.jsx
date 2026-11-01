@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import ChatHero          from '../components/chat/ChatHero';
@@ -10,20 +10,39 @@ import { speakText, stopSpeaking } from '../services/ttsService';
 import { sendBookingEmail } from '../services/emailService';
 import { useAuth } from '../context/AuthContext';
 import { useAppointments } from '../context/AppointmentContext';
+import {
+  detectUserIntent,
+  executeAssistantTool,
+  formatTime12h,
+  formatDatePretty,
+} from '../services/availabilityEngine';
 import { ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 import './ChatPage.css';
 
-const WELCOME_MSG = {
-  id: 'welcome',
-  role: 'assistant',
-  text: "Hi there! Ready for your next look? What are we doing today?\n\nI can help you book with **Sarah**, **Emma**, or **David** — just tell me what service you need, when, and any stylist preference.",
-};
-
 export default function ChatPage() {
   const { user } = useAuth();
-  const { bookAppointment } = useAppointments();
+  const {
+    services,
+    staffList,
+    appointments,
+    blockedTimes,
+    businessSettings,
+    bookAppointment,
+    cancelAppointment,
+    rescheduleAppointment,
+  } = useAppointments();
 
-  const [messages,       setMessages]       = useState([WELCOME_MSG]);
+  const welcomeMessage = useMemo(() => {
+    const activeStaff = (staffList || []).filter(s => s.active !== false);
+    const names = activeStaff.map(s => `**${s.name.split(' ')[0]}**`).join(', ');
+    return {
+      id: 'welcome',
+      role: 'assistant',
+      text: `Hi there! Ready for your next look? What are we doing today?\n\nI can help you book with our specialists (${names || 'Sarah, Emma, David, Aria, Marcus, Chloe'}) — just tell me what service you need, when, and any stylist preference!`,
+    };
+  }, [staffList]);
+
+  const [messages,       setMessages]       = useState(() => [welcomeMessage]);
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState(null);
   const [pendingBooking, setPendingBooking] = useState(null);
@@ -49,63 +68,240 @@ export default function ChatPage() {
       }));
   }, [messages]);
 
+  // Handle customer choosing a suggested alternative chip
+  const handleSelectAlternative = useCallback((alt) => {
+    stopSpeaking();
+    const serviceName = alt.service?.name || pendingBooking?.serviceName || services[0]?.name || 'Haircut & Styling';
+    const targetService = services.find(s => s.name === serviceName) || services[0];
+    const targetEmp = alt.employee || alt.stylist || staffList[0];
+
+    const newPending = {
+      serviceName: targetService.name,
+      serviceDuration: Number(targetService.duration || 45),
+      servicePrice: `$${targetService.price}.00`,
+      employeeName: targetEmp.name,
+      employeeRole: targetEmp.role || 'Stylist',
+      date: alt.date,
+      time: alt.time,
+      customerName: user?.name || 'Valued Client',
+      customerEmail: user?.email || 'customer@example.com',
+    };
+
+    setPendingBooking(newPending);
+    setLatestIntent({
+      service: targetService.name,
+      employeePreference: targetEmp.name,
+      date: alt.date,
+      time: alt.time,
+    });
+
+    const replyText = `Awesome! I have set up your **${targetService.name}** with **${targetEmp.name}** for **${formatDatePretty(alt.date)} at ${formatTime12h(alt.time)}**.\n\nPlease click **Confirm Booking** below to secure your spot!`;
+
+    const assistantMsg = {
+      id: Date.now(),
+      role: 'assistant',
+      text: replyText,
+    };
+
+    setMessages(prev => [...prev, assistantMsg]);
+    if (isVoiceEnabled) {
+      speakText(`Selected ${targetService.name} with ${targetEmp.name} at ${formatTime12h(alt.time)}. Click confirm to finalize.`);
+    }
+  }, [pendingBooking, services, staffList, user, isVoiceEnabled]);
+
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || loading) return;
 
-    // Stop previous voice articulation if user starts speaking/sending
+    // Stop previous voice articulation if user sends a new message
     stopSpeaking();
 
-    const userMsg = { id: Date.now(), role: 'user', text: text.trim() };
+    const userText = text.trim();
+    const userMsg = { id: Date.now(), role: 'user', text: userText };
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
     setError(null);
 
+    const lower = userText.toLowerCase();
+    const isConfirm = ['yes', 'confirm', 'book', 'book it', 'please', 'ok', 'sure', 'sounds good', 'perfect', 'yes please'].some(w => lower === w || lower.startsWith(w));
+    const isDecline = ['no', 'cancel', 'nevermind', 'stop', 'no thanks', 'change'].some(w => lower === w || lower.startsWith(w));
+
+    // ── Quick Action: User Confirms Booking ─────────────────────────────────
+    if (pendingBooking && isConfirm) {
+      try {
+        const newApt = bookAppointment({
+          customerName: pendingBooking.customerName || user?.name || 'Valued Client',
+          customerEmail: pendingBooking.customerEmail || user?.email || 'client@example.com',
+          serviceName: pendingBooking.serviceName,
+          serviceDuration: pendingBooking.serviceDuration || 45,
+          servicePrice: pendingBooking.servicePrice || '$45.00',
+          employeeName: pendingBooking.employeeName,
+          employeeRole: pendingBooking.employeeRole || 'Stylist',
+          date: pendingBooking.date,
+          time: pendingBooking.time,
+          notes: 'Booked via StylistAI Assistant',
+        });
+
+        // Trigger email notification
+        try {
+          sendBookingEmail(newApt);
+        } catch {
+          /* non-blocking local preview */
+        }
+
+        const confirmMsg = {
+          id: Date.now() + 1,
+          role: 'assistant',
+          text: `🎉 You're all set! Your appointment for **${pendingBooking.serviceName}** with **${pendingBooking.employeeName}** has been confirmed for **${formatDatePretty(pendingBooking.date)} at ${formatTime12h(pendingBooking.time)}**.\n\nA confirmation has been generated in your account timeline. See you at the salon!`,
+          appointment: newApt,
+        };
+
+        setMessages(prev => [...prev, confirmMsg]);
+        if (isVoiceEnabled) {
+          speakText(`You're all set! Your appointment for ${pendingBooking.serviceName} with ${pendingBooking.employeeName} is confirmed.`);
+        }
+        setPendingBooking(null);
+        setLatestIntent(null);
+      } catch (err) {
+        setError('Failed to finalize booking: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // ── Quick Action: User Declines Booking ─────────────────────────────────
+    if (pendingBooking && isDecline) {
+      setPendingBooking(null);
+      setLatestIntent(null);
+      const cancelMsg = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        text: "No problem at all! I've cleared that proposed slot. What treatment, stylist, or time would you like to explore instead?",
+      };
+      setMessages(prev => [...prev, cancelMsg]);
+      setLoading(false);
+      return;
+    }
+
+    // ── Intelligent Cascade: Backend AI or Dynamic Client Engine ────────────
+    let handled = false;
+
+    // Try backend AI service if reachable
     try {
       const { data } = await api.post('/chat', {
-        message:        text.trim(),
+        message:        userText,
         history:        buildHistory(),
         pendingBooking,
       });
 
-      const assistantMsg = {
-        id:          Date.now() + 1,
-        role:        'assistant',
-        text:        data.message,
-        appointment: data.appointment || null,
-      };
+      if (data && data.message) {
+        const assistantMsg = {
+          id:          Date.now() + 1,
+          role:        'assistant',
+          text:        data.message,
+          appointment: data.appointment || null,
+        };
 
-      setMessages(prev => [...prev, assistantMsg]);
-      setPendingBooking(data.pendingBooking || null);
-      if (data.intent) setLatestIntent(data.intent);
+        setMessages(prev => [...prev, assistantMsg]);
+        setPendingBooking(data.pendingBooking || null);
+        if (data.intent) setLatestIntent(data.intent);
 
-      // 1. Text-to-Speech Output
-      if (isVoiceEnabled && data.message) {
-        speakText(data.message);
+        if (isVoiceEnabled && data.message) {
+          speakText(data.message);
+        }
+
+        if (data.appointment) {
+          sendBookingEmail(data.appointment);
+          bookAppointment({
+            customerName: data.appointment.customer_name || user?.name || 'Customer',
+            customerEmail: data.appointment.customer_email || user?.email || 'customer@example.com',
+            serviceName: data.appointment.services?.name || 'Haircut & Styling',
+            serviceDuration: data.appointment.services?.duration_minutes || 45,
+            employeeName: data.appointment.employees?.name || 'Sarah Jenkins',
+            date: data.appointment.appointment_date,
+            time: data.appointment.appointment_time,
+            notes: data.appointment.notes || 'Booked via AI Assistant',
+          });
+        }
+        handled = true;
       }
+    } catch {
+      // Backend not running or in local preview: use dynamic availability engine!
+      handled = false;
+    }
 
-      // 2. EmailJS Confirmation Email Dispatch
-      if (data.appointment) {
-        sendBookingEmail(data.appointment);
+    if (!handled) {
+      // ── Dynamic Availability & Alternatives Engine Fallback ───────────────
+      // Execute controlled AI Assistant Tool (Spec Pages 10-12, 23)
+      const detectedTool = detectUserIntent(userText);
+      const toolResult = executeAssistantTool({
+        tool: detectedTool,
+        userText,
+        user,
+        services,
+        staffList,
+        appointments,
+        blockedTimes,
+        businessSettings,
+        actions: {
+          cancelAppointment,
+          rescheduleAppointment,
+        },
+      });
 
-        // Sync with local shared appointment store
-        bookAppointment({
-          customerName: data.appointment.customer_name || user?.name || 'Customer',
-          customerEmail: data.appointment.customer_email || user?.email || 'customer@example.com',
-          serviceName: data.appointment.services?.name || 'Haircut',
-          serviceDuration: data.appointment.services?.duration_minutes || 45,
-          employeeName: data.appointment.employees?.name || 'Sarah Jenkins',
-          date: data.appointment.appointment_date,
-          time: data.appointment.appointment_time,
-          notes: data.appointment.notes || 'Booked via AI Assistant',
+      // Update cloud panel intent
+      setLatestIntent(toolResult.structuredOutput || null);
+
+      if (toolResult.intent === 'BOOK_APPOINTMENT' && toolResult.available) {
+        setPendingBooking({
+          serviceName: toolResult.service.name,
+          serviceDuration: toolResult.duration,
+          servicePrice: toolResult.price,
+          employeeName: toolResult.employee.name,
+          employeeRole: toolResult.employee.role,
+          date: toolResult.date,
+          time: toolResult.time,
+          customerName: user?.name || 'Customer',
+          customerEmail: user?.email || 'customer@example.com',
         });
       }
 
-    } catch (err) {
-      setError(err.response?.data?.error || 'AI service unavailable. You can also book directly from the Customer Portal!');
-    } finally {
-      setLoading(false);
+      let replyText = toolResult.message;
+      if (toolResult.intent === 'BOOK_APPOINTMENT' && toolResult.available) {
+        replyText += "\n\nI have prepared your reservation card below. Would you like to confirm this appointment?";
+      }
+
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: 'assistant',
+          text: replyText,
+          alternatives: toolResult.alternatives || [],
+        },
+      ]);
+
+      if (isVoiceEnabled && replyText) {
+        speakText(replyText.split('\n')[0]);
+      }
     }
-  }, [loading, pendingBooking, buildHistory, isVoiceEnabled, bookAppointment, user]);
+
+    setLoading(false);
+  }, [
+    loading,
+    pendingBooking,
+    buildHistory,
+    isVoiceEnabled,
+    bookAppointment,
+    cancelAppointment,
+    rescheduleAppointment,
+    user,
+    services,
+    staffList,
+    appointments,
+    blockedTimes,
+    businessSettings,
+  ]);
 
   const handleConfirm = () => sendMessage('Yes, please confirm the appointment.');
   const handleCancel  = () => sendMessage('No, cancel this booking.');
@@ -113,7 +309,7 @@ export default function ChatPage() {
   // Clear / Restart Chat Option
   const handleReset = () => {
     stopSpeaking();
-    setMessages([WELCOME_MSG]);
+    setMessages([welcomeMessage]);
     setPendingBooking(null);
     setLatestIntent(null);
     setError(null);
@@ -191,6 +387,7 @@ export default function ChatPage() {
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>warning</span>
               {error}
               <button
+                type="button"
                 onClick={() => setError(null)}
                 aria-label="Dismiss error"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 8, fontWeight: 700 }}
@@ -213,7 +410,7 @@ export default function ChatPage() {
                     </span>
                     <div>
                       <div className="chat-canvas-name">StylistAI</div>
-                      <div className="chat-canvas-sub">ASSISTANT</div>
+                      <div className="chat-canvas-sub">DYNAMIC BOOKING ASSISTANT</div>
                     </div>
                   </div>
                   <div className="chat-canvas-dots">
@@ -228,6 +425,7 @@ export default function ChatPage() {
                   loading={loading}
                   onConfirm={handleConfirm}
                   onCancel={handleCancel}
+                  onSelectAlternative={handleSelectAlternative}
                 />
               </div>
 

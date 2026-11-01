@@ -50,7 +50,7 @@ export async function getAppointments(req, res, next) {
         notes,
         calendar_event_id,
         created_at,
-        services ( id, name, duration_minutes ),
+        services ( id, name, duration_minutes, price ),
         employees ( id, name, role )
       `)
       .order('appointment_date', { ascending: true })
@@ -146,7 +146,7 @@ export async function createAppointment(req, res, next) {
         status,
         notes,
         created_at,
-        services ( id, name, duration_minutes ),
+        services ( id, name, duration_minutes, price ),
         employees ( id, name, role )
       `)
       .single();

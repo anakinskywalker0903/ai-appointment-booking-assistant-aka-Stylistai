@@ -1,14 +1,9 @@
-const SERVICE_PRICES = {
-  'Haircut': '$45',
-  'Hair Spa': '$65',
-  'Hair Coloring': '$95',
-  'Facial': '$55',
-  'Beard Trim': '$25',
-};
+import React from 'react';
+import { useAppointments } from '../../context/AppointmentContext';
 
 /**
  * BookingCloudPanel — Right-hand side cloud panel showing real-time
- * user selections, floating chips, estimated price, pending booking confirmation, and Clear/Restart Chat option.
+ * user selections, floating chips, dynamic treatment price, pending booking confirmation, and Clear/Restart Chat option.
  */
 export default function BookingCloudPanel({
   intent,
@@ -18,14 +13,19 @@ export default function BookingCloudPanel({
   onCancel,
   loading
 }) {
-  const service  = pendingBooking?.serviceName  || intent?.service            || null;
-  const date     = pendingBooking?.date         || intent?.date               || null;
-  const time     = pendingBooking?.time         || intent?.time               || null;
-  const stylist  = pendingBooking?.employeeName || intent?.employeePreference || null;
-  const duration = pendingBooking?.durationMin  || null;
-  const name     = pendingBooking?.customerName || intent?.customerName       || null;
-  const email    = pendingBooking?.customerEmail || intent?.customerEmail     || null;
-  const price    = service ? SERVICE_PRICES[service] || '$45' : null;
+  const { services } = useAppointments();
+
+  const serviceName = pendingBooking?.serviceName  || intent?.service            || null;
+  const date        = pendingBooking?.date         || intent?.date               || null;
+  const time        = pendingBooking?.time         || intent?.time               || null;
+  const stylist     = pendingBooking?.employeeName || intent?.employeePreference || null;
+  const duration    = pendingBooking?.durationMin  || pendingBooking?.serviceDuration || null;
+  const name        = pendingBooking?.customerName || intent?.customerName       || null;
+  const email       = pendingBooking?.customerEmail || intent?.customerEmail     || null;
+
+  // Resolve dynamic price from service catalog or pending booking (Zero Hardcoding!)
+  const matchedService = services?.find(s => s.name?.toLowerCase() === serviceName?.toLowerCase());
+  const price = pendingBooking?.servicePrice || (matchedService ? `$${matchedService.price}.00` : null);
 
   function formatDate(d) {
     if (!d) return null;
@@ -40,7 +40,7 @@ export default function BookingCloudPanel({
   }
 
   const chips = [
-    { icon: 'content_cut',     label: service,             tag: 'Service',     key: 'service' },
+    { icon: 'content_cut',     label: serviceName,         tag: 'Service',     key: 'service' },
     { icon: 'payments',        label: price,               tag: 'Est. Cost',   key: 'price' },
     { icon: 'person',          label: stylist,             tag: 'Stylist',     key: 'stylist' },
     { icon: 'calendar_today',  label: formatDate(date),    tag: 'Date',        key: 'date' },
@@ -58,105 +58,86 @@ export default function BookingCloudPanel({
       <div className="cloud-panel-header">
         <div className="cloud-panel-title-wrap">
           <span className="material-symbols-outlined fill" style={{ color: 'var(--orange)', fontSize: 22 }}>
-            cloud
+            cloud_queue
           </span>
-          <div>
-            <div className="cloud-panel-title">SELECTION CLOUD</div>
-            <div className="cloud-panel-sub">REAL-TIME INFO</div>
-          </div>
+          <h2 className="cloud-panel-title">Active Booking Cloud</h2>
         </div>
-
-        {/* Clear / Restart Chat Option */}
         <button
           type="button"
+          className="cloud-reset-btn"
           onClick={onReset}
-          className="cloud-restart-btn"
-          title="Restart Conversation"
+          title="Restart Conversation & Clear Cloud"
           aria-label="Restart Conversation"
         >
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>refresh</span>
-          <span>Clear Chat</span>
+          Reset
         </button>
       </div>
 
-      {/* Cloud Body with Floating Selection Bubbles */}
-      <div className="cloud-panel-body">
+      <p className="cloud-panel-subtitle">
+        Real-time booking parameters extracted by our dynamic availability engine.
+      </p>
+
+      {/* Dynamic Floating Chips */}
+      <div className="cloud-chips-wrap">
         {!hasSelections ? (
           <div className="cloud-empty-state">
-            <div className="cloud-empty-icon-wrap">
-              <span className="material-symbols-outlined" style={{ fontSize: 36, color: 'var(--orange)' }}>
-                temp_preferences_custom
-              </span>
-            </div>
-            <p className="cloud-empty-title">Waiting for your request...</p>
-            <p className="cloud-empty-desc">
-              Your chosen service, estimated price, stylist, date, and time will float into this cloud as we talk.
-            </p>
+            <span className="material-symbols-outlined" style={{ fontSize: 32, color: 'var(--charcoal-light)' }}>
+              bubble_chart
+            </span>
+            <p>Tell the assistant what you need — your parameters will materialize here.</p>
           </div>
         ) : (
-          <div className="cloud-chips-grid">
-            {chips.map((chip, i) => (
-              <div
-                key={chip.key}
-                className={`cloud-chip ${chip.key === 'email' ? 'cloud-chip--wide' : ''}`}
-                style={{ animationDelay: `${i * 60}ms` }}
-              >
-                <div className="cloud-chip-header">
-                  <span className="material-symbols-outlined cloud-chip-icon">{chip.icon}</span>
-                  <span className="cloud-chip-tag">{chip.tag}</span>
-                </div>
-                <div className="cloud-chip-val">{chip.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Confirmation Summary Card if pendingBooking is ready */}
-        {pendingBooking && (
-          <div className="cloud-pending-card">
-            <div className="cloud-pending-header">
-              <span className="material-symbols-outlined fill" style={{ color: 'var(--orange)' }}>
-                check_circle
-              </span>
-              <span className="cloud-pending-title">Ready to Confirm</span>
-            </div>
-
-            <div className="cloud-pending-slot">
-              <div className="cloud-pending-time">{formatTime(pendingBooking.time)}</div>
-              <div className="cloud-pending-meta">
-                {pendingBooking.serviceName} with <strong>{pendingBooking.employeeName}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '0.78rem', fontWeight: 800 }}>
-                <span className="cloud-pending-date">{formatDate(pendingBooking.date)}</span>
-                <span style={{ color: 'var(--orange)' }}>Est. {SERVICE_PRICES[pendingBooking.serviceName] || '$45'}</span>
+          chips.map(chip => (
+            <div key={chip.key} className="cloud-chip neo-shadow-sm">
+              <span className="material-symbols-outlined cloud-chip-icon">{chip.icon}</span>
+              <div className="cloud-chip-text">
+                <span className="cloud-chip-tag">{chip.tag}</span>
+                <strong className="cloud-chip-label">{chip.label}</strong>
               </div>
             </div>
-
-            <div className="cloud-pending-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={onConfirm}
-                disabled={loading}
-                style={{ flex: 1, justifyContent: 'center' }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check</span>
-                Confirm
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={onCancel}
-                disabled={loading}
-                style={{ flex: 1, justifyContent: 'center' }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
-                Cancel
-              </button>
-            </div>
-          </div>
+          ))
         )}
       </div>
+
+      {/* Confirmation Widget inside Cloud Panel */}
+      {pendingBooking && (
+        <div className="cloud-pending-card neo-shadow-md">
+          <div className="cloud-pending-header">
+            <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--orange)' }}>
+              event_available
+            </span>
+            <strong>Slot Ready for Confirmation</strong>
+          </div>
+          <div className="cloud-pending-details">
+            <div><strong>Treatment:</strong> {pendingBooking.serviceName}</div>
+            <div><strong>Stylist:</strong> {pendingBooking.employeeName}</div>
+            <div><strong>When:</strong> {formatDate(pendingBooking.date)} at {formatTime(pendingBooking.time)}</div>
+            <div><strong>Price:</strong> {price}</div>
+          </div>
+          <div className="cloud-pending-actions">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onConfirm}
+              disabled={loading}
+              style={{ flex: 1, justifyContent: 'center' }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
+              Confirm
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={onCancel}
+              disabled={loading}
+              style={{ justifyContent: 'center' }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
