@@ -18,10 +18,22 @@ export default function StaffDashboard() {
     removeBlockedTime,
   } = useAppointments();
 
-  // Active stylist view: defaults to logged-in user or first active staff
+  // Active stylist view: defaults to logged-in user if they are staff, else first active stylist
   const [selectedStylistName, setSelectedStylistName] = useState(() => {
-    return user?.name || (staffList && staffList[0]?.name) || 'Sarah Jenkins';
+    const isStaff = (staffList || []).some(s => s.name?.toLowerCase() === (user?.name || '').toLowerCase());
+    if (isStaff && user?.name) return user.name;
+    return (staffList && staffList[0]?.name) || 'Sarah Jenkins';
   });
+
+  // Ensure selected stylist always corresponds to a real member in staffList
+  React.useEffect(() => {
+    if (staffList && staffList.length > 0) {
+      const exists = staffList.some(s => s.name?.toLowerCase() === selectedStylistName.toLowerCase());
+      if (!exists) {
+        setSelectedStylistName(staffList[0].name);
+      }
+    }
+  }, [staffList, selectedStylistName]);
 
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'timetable'
   const [selectedAptDetails, setSelectedAptDetails] = useState(null);
@@ -93,14 +105,14 @@ export default function StaffDashboard() {
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Stylist Selector Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#ffffff', padding: '6px 12px', borderRadius: 8, border: '2px solid #000' }}>
-            <UserCheck size={16} />
-            <label htmlFor="stylist-select" style={{ fontSize: '0.8rem', fontWeight: 800 }}>Stylist:</label>
+          <div className="stylist-selector-container">
+            <UserCheck size={17} style={{ color: 'var(--orange)' }} />
+            <label htmlFor="stylist-select" className="stylist-selector-label">Stylist:</label>
             <select
               id="stylist-select"
               value={selectedStylistName}
               onChange={(e) => setSelectedStylistName(e.target.value)}
-              style={{ border: 'none', background: 'transparent', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', outline: 'none' }}
+              className="stylist-selector-input"
             >
               {(staffList || []).map(s => (
                 <option key={s.id} value={s.name}>

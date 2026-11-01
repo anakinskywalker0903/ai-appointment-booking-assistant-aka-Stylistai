@@ -15,20 +15,45 @@ import './AdminPage.css';
 
 const STATUS_FILTERS = ['all', 'confirmed', 'pending', 'cancelled'];
 
-// ── Auth gate (Fallback for unauthenticated visitors) ──────────────────────
+// ── Auth gate (Secure backend verification for salon owners) ───────────────
 function AuthGate({ onAuth }) {
-  const [pass, setPass]   = useState('');
+  const { login } = useAuth();
+  const [adminEmail, setAdminEmail] = useState('');
+  const [pass, setPass] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const expected = import.meta.env.VITE_ADMIN_PASS || 'admin123';
-    if (pass === expected || pass.trim().length > 0) {
-      sessionStorage.setItem('salon_admin_auth', 'true');
-      onAuth();
-    } else {
-      setError('Incorrect passphrase.');
+    if (!pass.trim()) {
+      setError('Please enter your owner password.');
+      return;
     }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const emailToUse = adminEmail.trim() || 'admin@stylistai.com';
+      const result = await login(emailToUse, pass);
+
+      if (result && result.success) {
+        sessionStorage.setItem('salon_admin_auth', 'true');
+        sessionStorage.removeItem('salon_admin_readonly');
+        onAuth(false);
+      } else {
+        setError(result?.error || 'Invalid credentials. Access denied.');
+      }
+    } catch {
+      setError('Authentication failed. Please verify your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReadOnly = () => {
+    sessionStorage.setItem('salon_admin_readonly', 'true');
+    onAuth(true);
   };
 
   return (
@@ -37,27 +62,45 @@ function AuthGate({ onAuth }) {
         <div className="auth-card-icon">
           <span className="material-symbols-outlined fill" style={{ fontSize: 32 }}>lock</span>
         </div>
-        <h2 className="auth-card-title">Admin Access</h2>
-        <p className="auth-card-sub">Enter the admin passphrase or switch to the Admin Persona to manage salon operations.</p>
+        <h2 className="auth-card-title">Salon Management Access</h2>
+        <p className="auth-card-sub">
+          Owner access (Rohit & Dhruv) permits editing services, staff, and bookings. Visitors can explore in Read-Only Mode.
+        </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <input
+            type="email"
+            className="auth-input"
+            placeholder="Owner email (optional, default: admin@stylistai.com)"
+            value={adminEmail}
+            onChange={e => setAdminEmail(e.target.value)}
+            style={{ marginBottom: 10 }}
+            aria-label="Owner email address"
+          />
+          <input
             type="password"
             className="auth-input"
-            placeholder="Admin passphrase (default: admin123)"
+            placeholder="Enter owner password"
             value={pass}
             onChange={e => setPass(e.target.value)}
             autoFocus
-            aria-label="Admin passphrase"
+            required
+            aria-label="Owner password"
           />
           {error && <p className="auth-error">{error}</p>}
-          <div className="auth-btns">
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+          <div className="auth-btns" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="submit" disabled={loading} className="btn btn-primary" style={{ flex: 1, minWidth: 140 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>lock_open</span>
-              Unlock
+              {loading ? 'Verifying...' : 'Unlock Full Access'}
             </button>
-            <Link to="/" className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>
-              ← Back
+            <button type="button" onClick={handleReadOnly} className="btn btn-secondary" style={{ flex: 1, minWidth: 140 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>visibility</span>
+              Read-Only Preview
+            </button>
+          </div>
+          <div style={{ marginTop: 12, textAlign: 'center' }}>
+            <Link to="/" className="btn btn-ghost" style={{ fontSize: '0.8rem' }}>
+              ← Return to Customer Homepage
             </Link>
           </div>
         </form>
@@ -81,7 +124,8 @@ export default function AdminPage() {
 
   const isRoleAdmin = role === 'ADMIN';
   const [sessionAuthed, setSessionAuthed] = useState(() => sessionStorage.getItem('salon_admin_auth') === 'true');
-  const authed = isRoleAdmin || sessionAuthed;
+  const [isReadOnly, setIsReadOnly] = useState(() => sessionStorage.getItem('salon_admin_readonly') === 'true');
+  const authed = isRoleAdmin || sessionAuthed || isReadOnly;
 
   const [activeTab,    setActiveTab]    = useState('overview');
   const [filter,       setFilter]       = useState('all');
@@ -161,6 +205,10 @@ export default function AdminPage() {
   }, [contextAppointments, services]);
 
   const updateStatus = async (id, status) => {
+    if (isReadOnly) {
+      showToast('Action blocked: Modifications disabled in Read-Only Mode. Unlock with passphrase.', 'error');
+      return;
+    }
     setUpdating(id);
     try {
       updateAppointmentStatus(id, status);
@@ -180,7 +228,9 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('salon_admin_auth');
+    sessionStorage.removeItem('salon_admin_readonly');
     setSessionAuthed(false);
+    setIsReadOnly(false);
   };
 
   const handleConnectCalendar = () => {
@@ -190,6 +240,10 @@ export default function AdminPage() {
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
+    if (isReadOnly) {
+      showToast('Action blocked: Settings modification disabled in Read-Only Mode.', 'error');
+      return;
+    }
     updateBusinessSettings(settingsForm);
     showToast('Salon business settings saved successfully.');
   };
@@ -303,7 +357,20 @@ export default function AdminPage() {
     };
   }, [normalizedAppointments, period, staffList]);
 
-  if (!authed) return <AuthGate onAuth={() => setSessionAuthed(true)} />;
+  if (!authed) {
+    return (
+      <AuthGate
+        onAuth={(readOnly) => {
+          if (readOnly) {
+            setIsReadOnly(true);
+          } else {
+            setSessionAuthed(true);
+            setIsReadOnly(false);
+          }
+        }}
+      />
+    );
+  }
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -371,6 +438,49 @@ export default function AdminPage() {
             )}
           </div>
         </header>
+
+        {/* Read-Only Mode Banner */}
+        {isReadOnly && (
+          <div style={{
+            background: '#fffbeb',
+            border: '2px solid #d97706',
+            borderRadius: 8,
+            padding: '10px 16px',
+            marginBottom: 18,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            boxShadow: '2px 2px 0px #000',
+            flexWrap: 'wrap',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="material-symbols-outlined" style={{ color: '#d97706', fontSize: 22 }}>visibility</span>
+              <div>
+                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#92400e' }}>
+                  Read-Only Preview Mode Active
+                </span>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: '#78350f' }}>
+                  Administrative modifications are restricted to Salon Owners (Rohit & Dhruv). Modifying appointments, staff, and pricing is disabled.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ padding: '6px 14px', fontSize: '0.78rem', whiteSpace: 'nowrap' }}
+              onClick={() => {
+                sessionStorage.removeItem('salon_admin_auth');
+                sessionStorage.removeItem('salon_admin_readonly');
+                setSessionAuthed(false);
+                setIsReadOnly(false);
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>lock_open</span>
+              Unlock Owner Access
+            </button>
+          </div>
+        )}
 
         {/* ════════════════ TAB 1: OVERVIEW ════════════════ */}
         {activeTab === 'overview' && (

@@ -2,10 +2,27 @@ import Groq from 'groq-sdk';
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import { buildSystemPrompt } from './prompts.js';
+import { extractIntent as geminiExtractIntent } from './gemini.js';
 
 dotenv.config();
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Multi-key pool: supports GROQ_API_KEYS="key1,key2,key3" or single GROQ_API_KEY
+const rawKeys = process.env.GROQ_API_KEYS || process.env.GROQ_API_KEY || '';
+const GROQ_KEYS = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
+let currentKeyIdx = 0;
+
+function getActiveGroqClient() {
+  if (GROQ_KEYS.length === 0) return null;
+  const key = GROQ_KEYS[currentKeyIdx % GROQ_KEYS.length];
+  return new Groq({ apiKey: key });
+}
+
+function rotateGroqKey() {
+  if (GROQ_KEYS.length > 1) {
+    currentKeyIdx = (currentKeyIdx + 1) % GROQ_KEYS.length;
+    console.log(`[Groq] Rotated to API key #${currentKeyIdx + 1} of ${GROQ_KEYS.length}`);
+  }
+}
 
 // ── Zod schema to validate Groq's JSON output ───────────────────────────────
 
@@ -43,18 +60,12 @@ The JSON object must have exactly these fields:
 }`;
 
 // ── Model cascade ────────────────────────────────────────────────────────────
-// Groq's free tier is generous, but we keep a cascade for resilience.
 
 const MODEL_CASCADE = [
   'groq/compound',       // Primary — top quality compound reasoning model
   'groq/compound-mini',  // Fallback — high speed lightweight model
 ];
 
-/**
- * Convert frontend chat history format to Groq/OpenAI messages format.
- * Frontend sends: [{ role: 'user'|'model', parts: [{ text }] }]
- * Groq expects:   [{ role: 'user'|'assistant', content: '...' }]
- */
 function convertHistory(history) {
   return history.map(msg => ({
     role: msg.role === 'model' ? 'assistant' : 'user',
@@ -64,13 +75,10 @@ function convertHistory(history) {
 
 /**
  * Call Groq with conversation history and extract structured booking intent.
- * Uses JSON mode + Zod validation to guarantee structured output.
- *
- * @param {string} userMessage - Latest user message
- * @param {Array}  history     - [{role: 'user'|'model', parts: [{text}]}]
- * @param {Array}  services    - Active services from DB
- * @param {Array}  employees   - Active employees from DB
- * @returns {Object} { intent, usage }
+ * Features:
+ *  1. Multi-key rotation on 429 rate limit
+ *  2. Dual model cascade (compound -> compound-mini)
+ *  3. Ultimate fallback to Gemini if all Groq keys/models are exhausted
  */
 export async function extractIntent(userMessage, history, services, employees = []) {
   const systemPrompt = buildSystemPrompt(services, employees) + JSON_FORMAT_INSTRUCTIONS;
@@ -81,93 +89,98 @@ export async function extractIntent(userMessage, history, services, employees = 
   ];
 
   let lastError;
+  const totalKeysToTry = Math.max(1, GROQ_KEYS.length);
 
-  for (const modelName of MODEL_CASCADE) {
-    // Each model gets up to 2 attempts (handles transient errors)
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        const completion = await groq.chat.completions.create({
-          model: modelName,
-          messages,
-          temperature: 0.2,
-          max_tokens: 1024,
-          response_format: { type: 'json_object' },
-        });
+  for (let keyAttempt = 0; keyAttempt < totalKeysToTry; keyAttempt++) {
+    const groqClient = getActiveGroqClient();
+    if (!groqClient) {
+      console.warn('[Groq] No GROQ_API_KEY available, falling back directly to Gemini.');
+      break;
+    }
 
-        const raw = completion.choices[0]?.message?.content;
-        if (!raw) {
-          throw new Error('Groq returned empty response');
-        }
-
-        // Parse JSON
-        let parsed;
+    for (const modelName of MODEL_CASCADE) {
+      for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          parsed = JSON.parse(raw);
-        } catch {
-          throw new Error(`Groq returned invalid JSON: ${raw.slice(0, 200)}`);
-        }
+          const completion = await groqClient.chat.completions.create({
+            model: modelName,
+            messages,
+            temperature: 0.2,
+            max_tokens: 1024,
+            response_format: { type: 'json_object' },
+          });
 
-        // Validate with Zod
-        const validated = intentSchema.safeParse(parsed);
-        if (!validated.success) {
-          console.warn(`[Groq] Schema validation failed on ${modelName}:`, validated.error.flatten());
-          // Try to use the raw parsed data with defaults for missing fields
-          parsed = {
-            intent: parsed.intent || 'GENERAL',
-            service: parsed.service || null,
-            date: parsed.date || null,
-            time: parsed.time || null,
-            employeePreference: parsed.employeePreference || null,
-            customerName: parsed.customerName || null,
-            customerEmail: parsed.customerEmail || null,
-            confirmationResponse: parsed.confirmationResponse || null,
-            missingFields: parsed.missingFields || [],
-            message: parsed.message || "I'm sorry, could you rephrase that?",
-          };
-        } else {
-          parsed = validated.data;
-        }
+          const raw = completion.choices[0]?.message?.content;
+          if (!raw) throw new Error('Groq returned empty response');
 
-        // Build usage info (Groq provides this in the response)
-        const usage = completion.usage ? {
-          promptTokenCount: completion.usage.prompt_tokens,
-          candidatesTokenCount: completion.usage.completion_tokens,
-          totalTokenCount: completion.usage.total_tokens,
-        } : null;
+          let parsed;
+          try {
+            parsed = JSON.parse(raw);
+          } catch {
+            throw new Error(`Groq returned invalid JSON: ${raw.slice(0, 200)}`);
+          }
 
-        if (modelName !== MODEL_CASCADE[0]) {
-          console.log(`[Groq] Used fallback model: ${modelName}`);
-        }
+          const validated = intentSchema.safeParse(parsed);
+          if (!validated.success) {
+            console.warn(`[Groq] Schema validation failed on ${modelName}:`, validated.error.flatten());
+            parsed = {
+              intent: parsed.intent || 'GENERAL',
+              service: parsed.service || null,
+              date: parsed.date || null,
+              time: parsed.time || null,
+              employeePreference: parsed.employeePreference || null,
+              customerName: parsed.customerName || null,
+              customerEmail: parsed.customerEmail || null,
+              confirmationResponse: parsed.confirmationResponse || null,
+              missingFields: parsed.missingFields || [],
+              message: parsed.message || "I'm sorry, could you rephrase that?",
+            };
+          } else {
+            parsed = validated.data;
+          }
 
-        return { intent: parsed, usage };
+          const usage = completion.usage ? {
+            promptTokenCount: completion.usage.prompt_tokens,
+            candidatesTokenCount: completion.usage.completion_tokens,
+            totalTokenCount: completion.usage.total_tokens,
+          } : null;
 
-      } catch (err) {
-        lastError = err;
+          return { intent: parsed, usage };
 
-        const status = err.status || err.statusCode;
-        const is429 = status === 429 || err.message?.includes('429') || err.message?.includes('rate_limit');
-        const is503 = status === 503 || err.message?.includes('503') || err.message?.includes('Service Unavailable');
+        } catch (err) {
+          lastError = err;
+          const status = err.status || err.statusCode;
+          const is429 = status === 429 || err.message?.includes('429') || err.message?.includes('rate_limit');
+          const is503 = status === 503 || err.message?.includes('503');
 
-        if (is429) {
-          console.warn(`[Groq] 429 rate limit on ${modelName}. Moving to next model.`);
-          break; // Skip to next model
-        }
+          if (is429) {
+            console.warn(`[Groq] 429 Rate limit on key #${currentKeyIdx + 1}. Rotating key...`);
+            rotateGroqKey();
+            break; // Break model loop to retry with next rotated key
+          }
 
-        if (is503 && attempt < 2) {
-          console.warn(`[Groq] 503 transient on ${modelName}, retrying in 2s (attempt ${attempt}/2)`);
-          await new Promise(r => setTimeout(r, 2000));
-          continue;
-        }
+          if (is503 && attempt < 2) {
+            console.warn(`[Groq] 503 transient on ${modelName}, retrying in 2s...`);
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
 
-        // Non-retryable error on this model — try next
-        if (attempt >= 2 || (!is429 && !is503)) {
-          console.warn(`[Groq] Error on ${modelName}: ${err.message}. Trying next model.`);
-          break;
+          if (attempt >= 2 || (!is429 && !is503)) {
+            break; // Skip to next model
+          }
         }
       }
     }
   }
 
-  // All models exhausted
-  throw lastError;
+  // If all Groq keys and models hit rate limits or failed, cascade to Gemini!
+  if (process.env.GEMINI_API_KEY) {
+    console.warn('[AI Cascade] All Groq keys/models failed. Falling back to Google Gemini...');
+    try {
+      return await geminiExtractIntent(userMessage, history, services, employees);
+    } catch (geminiErr) {
+      console.error('[AI Cascade] Gemini fallback also failed:', geminiErr.message);
+    }
+  }
+
+  throw lastError || new Error('All AI providers exhausted');
 }

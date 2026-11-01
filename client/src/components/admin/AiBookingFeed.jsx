@@ -1,19 +1,34 @@
-/**
- * Live AI Booking Feed — shows recent AI-booked appointments.
- * appointments: full list (we'll show the last few AI-confirmed ones)
- */
-export default function AiBookingFeed({ appointments }) {
-  // Show the 3 most recently created confirmed appointments
-  const recent = [...appointments]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 3);
+import React from 'react';
 
-  function timeAgo(ts) {
-    const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
-    if (diff < 60)   return `${diff}s ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
+/**
+ * Live AI Booking Feed — shows recent AI-booked appointments with real statuses and timestamps.
+ * appointments: full list
+ */
+export default function AiBookingFeed({ appointments = [] }) {
+  // Sort by date/time descending to show the most recent bookings first
+  const recent = [...appointments]
+    .sort((a, b) => {
+      const dateA = a.created_at || a.appointment_date || a.date || '';
+      const dateB = b.created_at || b.appointment_date || b.date || '';
+      return dateB.localeCompare(dateA);
+    })
+    .slice(0, 4);
+
+  function timeAgo(ts, dateStr) {
+    const raw = ts || dateStr;
+    if (!raw) return 'Recently';
+
+    const parsed = new Date(raw);
+    if (isNaN(parsed.getTime())) {
+      return 'Recently';
+    }
+
+    const diff = Math.floor((Date.now() - parsed.getTime()) / 1000);
+    if (diff < 60 && diff >= 0) return 'Just now';
+    if (diff < 3600 && diff >= 0) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400 && diff >= 0) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff >= 86400 && diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`;
+    return dateStr || 'Recently';
   }
 
   function formatTime(t) {
@@ -26,7 +41,7 @@ export default function AiBookingFeed({ appointments }) {
     return (
       <div className="feed-empty">
         <span className="material-symbols-outlined" style={{ fontSize: 32, opacity: 0.3 }}>smart_toy</span>
-        <p>No AI bookings yet.</p>
+        <p>No recent AI bookings recorded.</p>
       </div>
     );
   }
@@ -34,58 +49,79 @@ export default function AiBookingFeed({ appointments }) {
   return (
     <div className="feed-list">
       {recent.map(appt => {
-        const isAutoBooked = !!appt.calendar_event_id;
+        const isConfirmed = appt.status === 'confirmed';
+        const isPending = appt.status === 'pending';
+        const isCancelled = appt.status === 'cancelled';
+        const hasCalSync = !!appt.calendar_event_id;
+
         return (
           <div
             key={appt.id}
-            className={`feed-card neo-shadow-sm ${appt.status === 'pending' ? 'feed-card--needs-approval' : ''}`}
+            className={`feed-card neo-shadow-sm feed-card--${appt.status}`}
           >
             <div className="feed-card-header">
-              <span className={`feed-badge ${isAutoBooked ? 'feed-badge--auto' : 'feed-badge--pending'}`}>
-                {isAutoBooked ? (
+              <span className={`feed-badge feed-badge--${appt.status}`}>
+                {isConfirmed && (
                   <>
-                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>smart_toy</span>
-                    Auto-Booked
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>check_circle</span>
+                    Confirmed
                   </>
-                ) : (
+                )}
+                {isPending && (
                   <>
-                    <span className="material-symbols-outlined" style={{ fontSize: 12 }}>warning</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>pending_actions</span>
                     Needs Approval
                   </>
                 )}
+                {isCancelled && (
+                  <>
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>cancel</span>
+                    Cancelled
+                  </>
+                )}
               </span>
-              <span className="feed-card-time">{timeAgo(appt.created_at)}</span>
+              <span className="feed-card-time">
+                {timeAgo(appt.created_at, appt.appointment_date || appt.date)}
+              </span>
             </div>
 
-            <p className="feed-card-quote">
-              "{appt.services?.name} for {appt.customer_name}"
-            </p>
+            <div className="feed-card-main">
+              <div className="feed-card-service-title">
+                {appt.services?.name || appt.serviceName || 'Haircut & Styling'}
+              </div>
+              <div className="feed-card-client">
+                Client: <strong>{appt.customer_name || appt.customerName || 'Anonymous'}</strong>
+              </div>
+            </div>
 
             <div className="feed-card-tags">
-              {appt.services?.name && (
-                <span className="feed-tag">{appt.services.name}</span>
-              )}
-              <span className="feed-tag">{appt.appointment_date}</span>
-              <span className="feed-tag">{formatTime(appt.appointment_time)}</span>
-              {appt.employees?.name && (
-                <span className="feed-tag">{appt.employees.name}</span>
+              <span className="feed-tag">
+                📅 {appt.appointment_date || appt.date}
+              </span>
+              <span className="feed-tag">
+                ⏰ {formatTime(appt.appointment_time || appt.time)}
+              </span>
+              {(appt.employees?.name || appt.employeeName) && (
+                <span className="feed-tag">
+                  ✂️ {appt.employees?.name || appt.employeeName}
+                </span>
               )}
             </div>
 
             <div className="feed-card-footer">
-              <span
-                style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: appt.status === 'confirmed' ? 'var(--success)' : 'var(--charcoal-light)',
-                }}
-              >
-                {appt.status}
+              <span className="feed-card-price">
+                ${appt.services?.price || appt.servicePrice || 45}
               </span>
-              {appt.calendar_event_id && (
-                <span style={{ fontSize: '0.75rem', color: 'var(--charcoal-light)' }}>📅 Synced</span>
+              {hasCalSync ? (
+                <span className="feed-cal-synced" title="Synced to Google Calendar">
+                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>cloud_done</span>
+                  Calendar Synced
+                </span>
+              ) : (
+                <span className="feed-source-label">
+                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>smart_toy</span>
+                  AI Processed
+                </span>
               )}
             </div>
           </div>

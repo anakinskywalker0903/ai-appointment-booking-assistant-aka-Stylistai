@@ -498,87 +498,148 @@
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 4px;
-  max-height: 180px;
+  gap: 12px;
+  margin-top: 8px;
+  max-height: 420px;
   overflow-y: auto;
+  padding-right: 4px;
 }
 
 .feed-card {
   background: var(--surface-white);
-  border: var(--border-brutal);
-  border-radius: 2px;
-  padding: 10px 12px;
+  border: 2px solid #000;
+  border-radius: 8px;
+  padding: 12px 14px;
   position: relative;
-  overflow: hidden;
+  box-shadow: 2px 2px 0px #000;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.feed-card--needs-approval {
-  background: var(--error-bg);
+.feed-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px #000;
+}
+
+.feed-card--pending {
+  background: #fffbeb;
+  border-color: #d97706;
+}
+
+.feed-card--confirmed {
+  background: #f0fdf4;
+  border-color: #16a34a;
+}
+
+.feed-card--cancelled {
+  background: #f8fafc;
+  opacity: 0.85;
+  border-color: #94a3b8;
 }
 
 .feed-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .feed-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  border: var(--border-brutal);
-  font-size: 0.62rem;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  border-radius: 2px;
+  border-radius: 4px;
+  border: 1.5px solid #000;
 }
-.feed-badge--auto    { background: var(--blue-light); color: var(--charcoal-dark); }
-.feed-badge--pending { background: var(--error);       color: #fff; }
+
+.feed-badge--confirmed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.feed-badge--pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.feed-badge--cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
 
 .feed-card-time {
-  font-size: 0.68rem;
-  font-weight: 500;
-  color: var(--charcoal-light);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
 }
 
-.feed-card-quote {
+.feed-card-main {
+  margin-bottom: 8px;
+}
+
+.feed-card-service-title {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.feed-card-client {
   font-size: 0.8rem;
-  font-style: italic;
-  color: var(--charcoal-light);
-  border-left: 3px solid var(--orange);
-  padding-left: 8px;
-  margin-bottom: 6px;
-  line-height: 1.35;
+  color: #475569;
+  margin-top: 2px;
 }
 
 .feed-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .feed-tag {
-  padding: 1px 5px;
-  background: var(--surface-high);
-  border: var(--border-thick);
-  font-size: 0.65rem;
+  padding: 2px 7px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  font-size: 0.7rem;
   font-weight: 700;
-  color: var(--charcoal-dark);
-  border-radius: 2px;
-  letter-spacing: 0.03em;
+  color: #334155;
+  border-radius: 4px;
 }
 
 .feed-card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 6px;
-  border-top: var(--border-thick);
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.feed-card-price {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #15803d;
+}
+
+.feed-cal-synced {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.feed-source-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
 }
 
 .feed-empty {

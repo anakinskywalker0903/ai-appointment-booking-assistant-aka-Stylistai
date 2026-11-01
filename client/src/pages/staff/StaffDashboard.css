@@ -376,3 +376,38 @@
     grid-template-columns: 1fr;
   }
 }
+
+.stylist-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0px #000;
+}
+
+.stylist-selector-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #1e293b;
+}
+
+.stylist-selector-input {
+  border: 1.5px solid #000;
+  background: #f8fafc;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  color: #0f172a;
+  box-shadow: 1px 1px 0px #000;
+}
+
+.stylist-selector-input:focus {
+  border-color: var(--orange);
+}
