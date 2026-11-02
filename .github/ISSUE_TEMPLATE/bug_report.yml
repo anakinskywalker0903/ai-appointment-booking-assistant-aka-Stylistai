@@ -1,0 +1,31 @@
+name: Bug Report
+description: Report an issue, bug, or unexpected behavior in StylistAI V2
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: workstream
+    attributes:
+      label: Affected Component
+      options:
+        - "Backend / API (Workstream A)"
+        - "Database / Schema (Workstream A)"
+        - "Frontend / UI (Workstream B)"
+        - "AI Assistant / Tool Calling"
+        - "Integrations / DevOps"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What is happening versus what was expected?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder: "1. Call POST /api/v2/appointments with ...\n2. See error ..."
+    validations:
+      required: true

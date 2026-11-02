@@ -1,9 +1,9 @@
-# Salon Domain Migration
-# Run this in Supabase SQL Editor in ORDER. Stop if any step errors.
+-- Salon Domain Migration
+-- Run this in Supabase SQL Editor in ORDER. Stop if any step errors.
 
-# ─────────────────────────────────────────────────────────────
-# STEP 1: Clear existing test data and reseed services
-# ─────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
+-- STEP 1: Clear existing test data and reseed services
+-- ─────────────────────────────────────────────────────────────
 
 -- Remove test appointments first (they reference old services)
 DELETE FROM appointments;
@@ -19,9 +19,9 @@ INSERT INTO services (name, duration_minutes, description) VALUES
   ('Beard Trim',     20, 'Beard shaping, trim, and grooming'),
   ('Facial',         60, 'Deep cleansing facial treatment');
 
-# ─────────────────────────────────────────────────────────────
-# STEP 2: Create employees table
-# ─────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
+-- STEP 2: Create employees table
+-- ─────────────────────────────────────────────────────────────
 
 CREATE TABLE employees (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -33,9 +33,9 @@ CREATE TABLE employees (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-# ─────────────────────────────────────────────────────────────
-# STEP 3: Create employee_services junction table
-# ─────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
+-- STEP 3: Create employee_services junction table
+-- ─────────────────────────────────────────────────────────────
 
 CREATE TABLE employee_services (
   employee_id UUID NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
@@ -43,11 +43,11 @@ CREATE TABLE employee_services (
   PRIMARY KEY (employee_id, service_id)
 );
 
-# ─────────────────────────────────────────────────────────────
-# STEP 4: Add employee_id to appointments
-# Drop the old unique constraint (slot-level) — now uniqueness
-# is per employee (two stylists CAN work the same time slot)
-# ─────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
+-- STEP 4: Add employee_id to appointments
+-- Drop the old unique constraint (slot-level) — now uniqueness
+-- is per employee (two stylists CAN work the same time slot)
+-- ─────────────────────────────────────────────────────────────
 
 ALTER TABLE appointments
   ADD COLUMN employee_id UUID REFERENCES employees(id);
@@ -61,21 +61,21 @@ CREATE UNIQUE INDEX appointments_employee_slot_unique
   ON appointments (employee_id, appointment_date, appointment_time)
   WHERE status != 'cancelled';
 
-# ─────────────────────────────────────────────────────────────
-# STEP 5: Seed employees
-# ─────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
+-- STEP 5: Seed employees
+-- ─────────────────────────────────────────────────────────────
 
 INSERT INTO employees (name, role, bio) VALUES
   ('Sarah', 'Senior Hair Stylist',  'Specializes in cuts and coloring. 8 years experience.'),
   ('Emma',  'Hair & Beauty Expert', 'Expert in hair spa and facials. 5 years experience.'),
   ('David', 'Master Barber',        'Specializes in cuts and beard grooming. 6 years experience.');
 
-# ─────────────────────────────────────────────────────────────
-# STEP 6: Assign services to employees
-# Sarah: Haircut, Hair Coloring, Hair Spa
-# Emma:  Haircut, Hair Spa, Facial
-# David: Haircut, Beard Trim
-# ─────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
+-- STEP 6: Assign services to employees
+-- Sarah: Haircut, Hair Coloring, Hair Spa
+-- Emma:  Haircut, Hair Spa, Facial
+-- David: Haircut, Beard Trim
+-- ─────────────────────────────────────────────────────────────
 
 INSERT INTO employee_services (employee_id, service_id)
 SELECT e.id, s.id FROM employees e, services s
