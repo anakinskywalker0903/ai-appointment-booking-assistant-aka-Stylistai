@@ -8,6 +8,7 @@ import BookingCloudPanel from '../components/chat/BookingCloudPanel';
 import ClickSpark        from '../components/shared/ClickSpark';
 import { speakText, stopSpeaking } from '../services/ttsService';
 import { sendBookingEmail } from '../services/emailService';
+import { trackEvent } from '../services/posthog';
 import { useAuth } from '../context/AuthContext';
 import { useAppointments } from '../context/AppointmentContext';
 import {
@@ -120,6 +121,7 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
     setError(null);
+    trackEvent('ai_message_sent', { length: userText.length });
 
     const lower = userText.toLowerCase();
     const isConfirm = ['yes', 'confirm', 'book', 'book it', 'please', 'ok', 'sure', 'sounds good', 'perfect', 'yes please'].some(w => lower === w || lower.startsWith(w));
@@ -167,6 +169,13 @@ export default function ChatPage() {
         }
 
         if (data.appointment) {
+          trackEvent('appointment_confirmed', {
+            bookingId: data.appointment.id,
+            service: data.appointment.services?.name,
+            stylist: data.appointment.employees?.name,
+            date: data.appointment.appointment_date,
+            time: data.appointment.appointment_time,
+          });
           sendBookingEmail(data.appointment);
           bookAppointment({
             customerName: data.appointment.customer_name || user?.name || 'Customer',
