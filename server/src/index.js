@@ -25,16 +25,25 @@ app.options('*', cors());
 
 app.use(express.json({ limit: '10kb' })); // prevent payload flood attacks
 
-// Routes
-app.use('/api/chat', chatRoutes);
-app.use('/api/services', servicesRoutes);
-app.use('/api/employees', employeesRoutes);
-app.use('/api/appointments', appointmentsRoutes);
-app.use('/api/availability', availabilityRoutes);
-app.use('/api/calendar', calendarRoutes);
+// URL Normalizer for Vercel Serverless
+app.use((req, res, next) => {
+  if (req.url.startsWith('/src/index.js')) {
+    const matched = req.headers['x-matched-path'] || req.headers['x-forwarded-uri'] || '/';
+    req.url = matched;
+  }
+  next();
+});
+
+// Routes — mounted on both /api/* and root /* for universal compatibility
+app.use(['/api/chat', '/chat'], chatRoutes);
+app.use(['/api/services', '/services'], servicesRoutes);
+app.use(['/api/employees', '/employees'], employeesRoutes);
+app.use(['/api/appointments', '/appointments'], appointmentsRoutes);
+app.use(['/api/availability', '/availability'], availabilityRoutes);
+app.use(['/api/calendar', '/calendar'], calendarRoutes);
 
 // Health check
-app.get(['/health', '/api/health'], (req, res) => {
+app.get(['/', '/health', '/api/health'], (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
