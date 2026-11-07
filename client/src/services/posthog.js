@@ -1,7 +1,10 @@
 import posthog from 'posthog-js';
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY || 'phc_kuB6uVU6SNoAE8JtpPnTTVmaonXQs2jH8FELxRMgyvYt';
-const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://eu.i.posthog.com';
+const rawHost = import.meta.env.VITE_POSTHOG_HOST;
+const POSTHOG_HOST = (rawHost && !rawHost.includes('us.i.posthog.com'))
+  ? rawHost
+  : 'https://eu.i.posthog.com';
 
 let isInitialized = false;
 
@@ -11,6 +14,7 @@ export function initPostHog() {
   if (POSTHOG_KEY) {
     posthog.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
+      ui_host: 'https://eu.posthog.com',
       autocapture: true,
       capture_pageview: true,
       capture_pageleave: true,
