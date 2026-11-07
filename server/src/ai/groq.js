@@ -6,9 +6,13 @@ import { extractIntent as geminiExtractIntent } from './gemini.js';
 
 dotenv.config();
 
-// Multi-key pool: supports GROQ_API_KEYS="key1,key2,key3" or single GROQ_API_KEY
-const rawKeys = process.env.GROQ_API_KEYS || process.env.GROQ_API_KEY || '';
-const GROQ_KEYS = rawKeys.split(',').map(k => k.trim()).filter(Boolean);
+// Multi-key pool: supports GROQ_API_KEYS="key1,key2", GROQ_API_KEY, and GROQ_API_KEY_FALLBACK
+const candidateKeys = [
+  ...(process.env.GROQ_API_KEYS ? process.env.GROQ_API_KEYS.split(',') : []),
+  process.env.GROQ_API_KEY,
+  process.env.GROQ_API_KEY_FALLBACK,
+];
+const GROQ_KEYS = [...new Set(candidateKeys.map(k => k?.trim()).filter(Boolean))];
 let currentKeyIdx = 0;
 
 function getActiveGroqClient() {
@@ -62,8 +66,11 @@ The JSON object must have exactly these fields:
 // ── Model cascade ────────────────────────────────────────────────────────────
 
 const MODEL_CASCADE = [
-  'groq/compound',       // Primary — top quality compound reasoning model
-  'groq/compound-mini',  // Fallback — high speed lightweight model
+  'openai/gpt-oss-120b',      // Primary — top quality high-capacity reasoning model
+  'openai/gpt-oss-20b',       // Fast fallback — high speed lightweight model
+  'qwen/qwen3.8-27b',         // Tertiary fallback
+  'llama-3.3-70b-versatile',  // LLaMA fallback if enabled on account
+  'llama-3.1-8b-instant',
 ];
 
 function convertHistory(history) {

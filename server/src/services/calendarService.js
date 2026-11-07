@@ -33,6 +33,9 @@ function getOAuthClient() {
  */
 function loadTokens() {
   try {
+    if (process.env.GOOGLE_TOKENS_JSON) {
+      return JSON.parse(process.env.GOOGLE_TOKENS_JSON);
+    }
     if (!fs.existsSync(TOKEN_PATH)) return null;
     const raw = fs.readFileSync(TOKEN_PATH, 'utf-8');
     return JSON.parse(raw);

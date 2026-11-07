@@ -47,7 +47,7 @@ export default function ChatPage() {
   const [error,          setError]          = useState(null);
   const [pendingBooking, setPendingBooking] = useState(null);
   const [latestIntent,   setLatestIntent]   = useState(null);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false); // Muted by default
 
   // Toggle Voice Output
   const handleToggleVoice = () => {
@@ -125,50 +125,6 @@ export default function ChatPage() {
     const isConfirm = ['yes', 'confirm', 'book', 'book it', 'please', 'ok', 'sure', 'sounds good', 'perfect', 'yes please'].some(w => lower === w || lower.startsWith(w));
     const isDecline = ['no', 'cancel', 'nevermind', 'stop', 'no thanks', 'change'].some(w => lower === w || lower.startsWith(w));
 
-    // ── Quick Action: User Confirms Booking ─────────────────────────────────
-    if (pendingBooking && isConfirm) {
-      try {
-        const newApt = bookAppointment({
-          customerName: pendingBooking.customerName || user?.name || 'Valued Client',
-          customerEmail: pendingBooking.customerEmail || user?.email || 'client@example.com',
-          serviceName: pendingBooking.serviceName,
-          serviceDuration: pendingBooking.serviceDuration || 45,
-          servicePrice: pendingBooking.servicePrice || '$45.00',
-          employeeName: pendingBooking.employeeName,
-          employeeRole: pendingBooking.employeeRole || 'Stylist',
-          date: pendingBooking.date,
-          time: pendingBooking.time,
-          notes: 'Booked via StylistAI Assistant',
-        });
-
-        // Trigger email notification
-        try {
-          sendBookingEmail(newApt);
-        } catch {
-          /* non-blocking local preview */
-        }
-
-        const confirmMsg = {
-          id: Date.now() + 1,
-          role: 'assistant',
-          text: `🎉 You're all set! Your appointment for **${pendingBooking.serviceName}** with **${pendingBooking.employeeName}** has been confirmed for **${formatDatePretty(pendingBooking.date)} at ${formatTime12h(pendingBooking.time)}**.\n\nA confirmation has been generated in your account timeline. See you at the salon!`,
-          appointment: newApt,
-        };
-
-        setMessages(prev => [...prev, confirmMsg]);
-        if (isVoiceEnabled) {
-          speakText(`You're all set! Your appointment for ${pendingBooking.serviceName} with ${pendingBooking.employeeName} is confirmed.`);
-        }
-        setPendingBooking(null);
-        setLatestIntent(null);
-      } catch (err) {
-        setError('Failed to finalize booking: ' + err.message);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
     // ── Quick Action: User Declines Booking ─────────────────────────────────
     if (pendingBooking && isDecline) {
       setPendingBooking(null);
@@ -231,6 +187,49 @@ export default function ChatPage() {
     }
 
     if (!handled) {
+      // ── Offline fallback: User Confirms Booking when backend is offline ──
+      if (pendingBooking && isConfirm) {
+        try {
+          const newApt = bookAppointment({
+            customerName: pendingBooking.customerName || user?.name || 'Valued Client',
+            customerEmail: pendingBooking.customerEmail || user?.email || 'client@example.com',
+            serviceName: pendingBooking.serviceName,
+            serviceDuration: pendingBooking.serviceDuration || 45,
+            servicePrice: pendingBooking.servicePrice || '$45.00',
+            employeeName: pendingBooking.employeeName,
+            employeeRole: pendingBooking.employeeRole || 'Stylist',
+            date: pendingBooking.date,
+            time: pendingBooking.time,
+            notes: 'Booked via StylistAI Assistant (Offline Mode)',
+          });
+
+          try {
+            sendBookingEmail(newApt);
+          } catch {
+            /* non-blocking local preview */
+          }
+
+          const confirmMsg = {
+            id: Date.now() + 1,
+            role: 'assistant',
+            text: `🎉 You're all set! Your appointment for **${pendingBooking.serviceName}** with **${pendingBooking.employeeName}** has been confirmed for **${formatDatePretty(pendingBooking.date)} at ${formatTime12h(pendingBooking.time)}**.\n\n📩 A confirmation email has been dispatched to **${pendingBooking.customerEmail || 'your email'}** *(please check your **Spam / Junk** folder if it doesn't appear in your main inbox!)*\n\nA confirmation has been generated in your account timeline. See you at the salon!`,
+            appointment: newApt,
+          };
+
+          setMessages(prev => [...prev, confirmMsg]);
+          if (isVoiceEnabled) {
+            speakText(`You're all set! Your appointment for ${pendingBooking.serviceName} with ${pendingBooking.employeeName} is confirmed.`);
+          }
+          setPendingBooking(null);
+          setLatestIntent(null);
+        } catch (err) {
+          setError('Failed to finalize booking: ' + err.message);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       // ── Dynamic Availability & Alternatives Engine Fallback ───────────────
       // Execute controlled AI Assistant Tool (Spec Pages 10-12, 23)
       const detectedTool = detectUserIntent(userText);
@@ -327,7 +326,7 @@ export default function ChatPage() {
         {/* Clean Chat Toolbar */}
         <div style={{
           maxWidth: 1320,
-          margin: '12px auto 0 auto',
+          margin: '4px auto 0 auto',
           padding: '0 20px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -413,8 +412,32 @@ export default function ChatPage() {
                       <div className="chat-canvas-sub">DYNAMIC BOOKING ASSISTANT</div>
                     </div>
                   </div>
-                  <div className="chat-canvas-dots">
-                    <span /><span /><span />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                      type="button"
+                      onClick={handleToggleVoice}
+                      title={isVoiceEnabled ? 'Click to Mute Voice' : 'Click to Enable Voice'}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontSize: 11,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        background: isVoiceEnabled ? 'var(--orange)' : '#f3f4f6',
+                        color: isVoiceEnabled ? '#fff' : '#4b5563',
+                        padding: '4px 8px',
+                        borderRadius: 4,
+                        border: '1.5px solid var(--charcoal-dark)',
+                        boxShadow: '1.5px 1.5px 0px var(--charcoal-dark)',
+                      }}
+                    >
+                      {isVoiceEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                      <span>{isVoiceEnabled ? 'VOICE ON' : 'MUTED'}</span>
+                    </button>
+                    <div className="chat-canvas-dots">
+                      <span /><span /><span />
+                    </div>
                   </div>
                 </div>
 

@@ -29,6 +29,17 @@ export default function ChatInput({ onSend, disabled }) {
     recognitionRef.current = rec;
   }, []);
 
+  // Auto-focus input on mount and whenever disabled state clears
+  useEffect(() => {
+    if (!disabled) {
+      // Small timeout ensures DOM re-render completes
+      const t = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(t);
+    }
+  }, [disabled]);
+
   const toggleMic = () => {
     if (!recognitionRef.current) return;
     if (listening) {
@@ -44,6 +55,7 @@ export default function ChatInput({ onSend, disabled }) {
     if (!text || disabled) return;
     onSend(text);
     setValue('');
+    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e) => {

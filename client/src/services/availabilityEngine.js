@@ -573,6 +573,7 @@ function generateUpcomingDaySlots(service, date, startFromMin, openMin, closeMin
 // ── V2 AI Assistant Tool Definitions & Intent Dispatcher (Spec Pages 10-12, 23) ──
 
 export const ASSISTANT_TOOLS = {
+  GENERAL_CONVERSATION: 'GENERAL_CONVERSATION',
   DISCOVER_SERVICES: 'DISCOVER_SERVICES',
   CHECK_AVAILABILITY: 'CHECK_AVAILABILITY',
   LIST_APPOINTMENTS: 'LIST_APPOINTMENTS',
@@ -582,8 +583,18 @@ export const ASSISTANT_TOOLS = {
 };
 
 export function detectUserIntent(text) {
-  if (!text) return ASSISTANT_TOOLS.BOOK_APPOINTMENT;
-  const lower = text.toLowerCase();
+  if (!text) return ASSISTANT_TOOLS.GENERAL_CONVERSATION;
+  const lower = text.toLowerCase().trim();
+
+  // 0. Greetings & General Inquiries
+  if (
+    /^(hi|hello|hey|greetings|good\s*(morning|afternoon|evening)|howdy|sup|yo|hola)\b/i.test(lower) ||
+    lower === 'hi' || lower === 'hello' || lower === 'hey' ||
+    lower.includes('how are you') || lower.includes('who are you') || lower.includes('what can you do') ||
+    lower.includes('help')
+  ) {
+    return ASSISTANT_TOOLS.GENERAL_CONVERSATION;
+  }
 
   // 1. Rescheduling (checked before general appointment queries)
   if (
@@ -664,6 +675,16 @@ export function executeAssistantTool({
   const userEmail = (user?.email || 'customer@example.com').toLowerCase();
 
   switch (tool) {
+    // ── TOOL 0: GENERAL CONVERSATION & GREETINGS ────────────────────────────
+    case ASSISTANT_TOOLS.GENERAL_CONVERSATION: {
+      return {
+        intent: 'GENERAL',
+        message: `Hello! Welcome to StylistAI. How can I help you today? You can ask about our salon services, check stylist availability, or let me know what appointment you'd like to book!`,
+        alternatives: [],
+        structuredOutput: { intent: 'GENERAL' },
+      };
+    }
+
     // ── TOOL 1: DISCOVER_SERVICES ───────────────────────────────────────────
     case ASSISTANT_TOOLS.DISCOVER_SERVICES: {
       const activeServices = services.filter(s => s.active !== false);
@@ -856,16 +877,29 @@ export function executeAssistantTool({
 
     // ── TOOL 6: BOOK_APPOINTMENT ─────────────────────────────────────────────
     default: {
-      const extractedService = matchService(userText, services) || services[0];
+      const matchedSvc = matchService(userText, services);
       const extractedStylist = matchStylist(userText, staffList);
-      const extractedDate = parseNaturalDate(userText) || (new Date(Date.now() + 86400000)).toISOString().slice(0, 10);
+      const extractedDate = parseNaturalDate(userText);
       const extractedTime = parseNaturalTime(userText);
+
+      // If user hasn't specified any service, stylist, or time, treat as general conversation
+      if (!matchedSvc && !extractedStylist && !extractedDate && !extractedTime) {
+        return {
+          intent: 'GENERAL',
+          message: `Hello! How can I help you today? You can let me know which treatment you'd like (e.g. Haircut & Styling, Balayage, Beard Grooming, Facial), your preferred stylist, or when you'd like to visit!`,
+          alternatives: [],
+          structuredOutput: { intent: 'GENERAL' },
+        };
+      }
+
+      const extractedService = matchedSvc || services[0];
+      const targetDate = extractedDate || (new Date(Date.now() + 86400000)).toISOString().slice(0, 10);
 
       if (!extractedTime) {
         return {
           intent: 'BOOK_APPOINTMENT',
-          message: `Great choice with **${extractedService.name}**! What time works best for you on **${formatDatePretty(extractedDate)}**?`,
-          alternatives: generateFreeSlotsForDay(extractedService, extractedDate, timeToMinutes(businessSettings.openTime || '09:00'), timeToMinutes(businessSettings.closeTime || '18:00'), staffList, appointments),
+          message: `Great choice with **${extractedService.name}**! What time works best for you on **${formatDatePretty(targetDate)}**?`,
+          alternatives: generateFreeSlotsForDay(extractedService, targetDate, timeToMinutes(businessSettings.openTime || '09:00'), timeToMinutes(businessSettings.closeTime || '18:00'), staffList, appointments),
           structuredOutput: { intent: 'BOOK_APPOINTMENT', stage: 'need_time' },
         };
       }

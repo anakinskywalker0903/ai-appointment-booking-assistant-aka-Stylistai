@@ -4,8 +4,9 @@
 
 /* ── Page shell (fits 100vh without page scroll) ─ */
 .chat-page {
-  height: 100vh;
-  max-height: 100vh;
+  height: 100%;
+  box-sizing: border-box;
+  max-height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -148,10 +149,10 @@
   max-width: 1320px;
   margin: 0 auto;
   width: 100%;
-  padding: 4px 32px 24px;
+  padding: 2px 24px 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
   overflow: hidden;
 }
@@ -161,7 +162,7 @@
   text-align: center;
   max-width: 700px;
   margin: 0 auto;
-  padding-top: 8px;
+  padding-top: 0px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -169,7 +170,7 @@
 }
 
 .chat-hero-title {
-  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+  font-size: 1.25rem;
   font-weight: 900;
   line-height: 1.15;
   letter-spacing: -0.03em;
@@ -199,7 +200,7 @@
 .chat-left {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
   flex: 1;
 }
@@ -277,7 +278,7 @@
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
   background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 1.2px, transparent 1.2px);
   background-size: 16px 16px;
@@ -661,7 +662,7 @@
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
 }
 

@@ -9,13 +9,14 @@
     "start": "node src/index.js"
   },
   "dependencies": {
-    "groq-sdk": "^0.18.0",
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.50.5",
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "googleapis": "^174.0.1",
+    "groq-sdk": "^0.18.0",
     "zod": "^3.24.2"
   }
 }

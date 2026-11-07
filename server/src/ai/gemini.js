@@ -67,9 +67,9 @@ const intentSchema = {
 // Model cascade: spread requests across available models to stay within free tier quotas.
 // Order: highest quota first, gemini-flash-latest (Gemini 3.7) as final fallback.
 const MODEL_CASCADE = [
-  'gemini-3.5-flash-lite',   // 15 req/day — reserved for demo
-  'gemini-3.1-flash-lite',   // 15 req/day — fallback
-  'gemini-3.5-flash',        // 5 req/day  — last resort
+  'gemini-1.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-pro',
 ];
 
 /**

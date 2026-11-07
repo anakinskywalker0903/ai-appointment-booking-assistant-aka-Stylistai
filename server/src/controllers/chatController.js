@@ -148,15 +148,6 @@ export async function handleChat(req, res, next) {
           }
         }
 
-        // ── Missing critical fields (service, date, time) ────────────────
-        if (!matchedService || !intent.date || !intent.time) {
-          return res.json({
-            message: intent.message,
-            pendingBooking: null,
-            intent,
-          });
-        }
-
         // ── Validate stylist / employee capability ───────────────────────
         let preferredEmployee = null;
         if (intent.employeePreference) {
@@ -173,20 +164,105 @@ export async function handleChat(req, res, next) {
           }
 
           // Check if preferred stylist performs this service
-          const canPerform = preferredEmployee.services.some(s => s.id === matchedService.id);
-          if (!canPerform) {
-            const capable = await getEmployeesForService(matchedService.id);
+          if (matchedService) {
+            const canPerform = preferredEmployee.services.some(s => s.id === matchedService.id);
+            if (!canPerform) {
+              const capable = await getEmployeesForService(matchedService.id);
+              return res.json({
+                message: `${preferredEmployee.name} does not offer ${matchedService.name}. For ${matchedService.name}, you can book with: ${capable.map(e => e.name).join(', ')}. Would you like to book with one of them?`,
+                pendingBooking: null,
+                intent,
+              });
+            }
+          }
+        }
+
+        // ── Missing critical fields: Service or Date ──────────────────────
+        if (!matchedService || !intent.date) {
+          return res.json({
+            message: intent.message,
+            pendingBooking: null,
+            intent,
+          });
+        }
+
+        const durationMin = matchedService.duration_minutes || 45;
+
+        // ── Missing Time, but Service and Date are known ───────────────────
+        // Proactively suggest 2-3 REAL available slots from the dynamic availability engine
+        if (!intent.time) {
+          let availableSlots = [];
+          let assignedStylist = preferredEmployee?.name || '';
+
+          if (preferredEmployee) {
+            availableSlots = await getAvailableSlotsForEmployee(preferredEmployee.id, intent.date, durationMin);
+          } else {
+            const options = await findBestAvailable(matchedService.id, intent.date, null, durationMin);
+            if (options.length > 0) {
+              availableSlots = options[0].availableSlots || [];
+              assignedStylist = options[0].employee.name;
+            }
+          }
+
+          if (availableSlots.length > 0) {
+            const fullContext = `${message} ${history.map(h => h.parts?.map(p => p.text).join(' ')).join(' ')}`.toLowerCase();
+            const wantsMorning = /\bmorning\b|\bam\b|before noon/i.test(fullContext);
+            const wantsAfternoon = /\bafternoon\b|\bpm\b|post noon/i.test(fullContext);
+            const wantsEvening = /\bevening\b|\bnight\b/i.test(fullContext);
+
+            let filteredSlots = availableSlots;
+            let periodLabel = '';
+
+            if (wantsMorning) {
+              const morning = availableSlots.filter(s => {
+                const [h] = s.split(':').map(Number);
+                return h >= 9 && h < 12;
+              });
+              if (morning.length > 0) {
+                filteredSlots = morning;
+                periodLabel = ' in the morning';
+              }
+            } else if (wantsAfternoon) {
+              const afternoon = availableSlots.filter(s => {
+                const [h] = s.split(':').map(Number);
+                return h >= 12 && h < 17;
+              });
+              if (afternoon.length > 0) {
+                filteredSlots = afternoon;
+                periodLabel = ' in the afternoon';
+              }
+            } else if (wantsEvening) {
+              const evening = availableSlots.filter(s => {
+                const [h] = s.split(':').map(Number);
+                return h >= 17 && h < 19;
+              });
+              if (evening.length > 0) {
+                filteredSlots = evening;
+                periodLabel = ' in the evening';
+              }
+            }
+
+            const suggested = filteredSlots.slice(0, 3).map(formatTime).join(', ');
+            const greeting = intent.customerName ? `Got it, ${intent.customerName}!` : 'Got it!';
+            const contactAsk = (!intent.customerName || !intent.customerEmail)
+              ? ' Also, please share your name and email so I can prepare your reservation.'
+              : '';
+
             return res.json({
-              message: `${preferredEmployee.name} does not offer ${matchedService.name}. For ${matchedService.name}, you can book with: ${capable.map(e => e.name).join(', ')}. Would you like to book with one of them?`,
+              message: `${greeting} For **${matchedService.name}** on **${formatDate(intent.date)}**${periodLabel}, we have openings${assignedStylist ? ` with **${assignedStylist}**` : ''} at **${suggested}**. Which time works best for you?${contactAsk}`,
               pendingBooking: null,
               intent,
             });
           }
+
+          return res.json({
+            message: intent.message,
+            pendingBooking: null,
+            intent,
+          });
         }
 
         // ── Check Availability (Supabase + Google Calendar) ──────────────
-        const durationMin = matchedService.duration_minutes || 45;
-
         if (preferredEmployee) {
           // Specific stylist requested
           const available = await isSlotAvailable(preferredEmployee.id, intent.date, intent.time, durationMin);
@@ -453,8 +529,10 @@ async function confirmBooking(pendingBooking, res, next) {
       ? '\n📅 **Google Calendar event created** with 24h & 30m reminders.'
       : '';
 
+    const emailNote = `\n📩 **Confirmation email dispatched to ${appointment.customer_email}**. *(Please check your **Spam / Junk** folder if it does not appear in your primary inbox!)*`;
+
     return res.json({
-      message: `🎉 **Your appointment is confirmed!**\n\n**Booking ID:** \`${appointment.id.slice(0, 8).toUpperCase()}\`\n✂️ Treatment: **${appointment.services.name}**\n💇‍♀️ Stylist: **${appointment.employees.name}**\n🗓 Date: **${formatDate(appointment.appointment_date)}**\n⏰ Time: **${formatTime(appointment.appointment_time.slice(0, 5))}**\n👤 Customer: **${appointment.customer_name}** (${appointment.customer_email})${calendarNote}\n\nWe look forward to seeing you at SalonAI! Is there anything else you need?`,
+      message: `🎉 **Your appointment is confirmed!**\n\n**Booking ID:** \`${appointment.id.slice(0, 8).toUpperCase()}\`\n✂️ Treatment: **${appointment.services.name}**\n💇‍♀️ Stylist: **${appointment.employees.name}**\n🗓 Date: **${formatDate(appointment.appointment_date)}**\n⏰ Time: **${formatTime(appointment.appointment_time.slice(0, 5))}**\n👤 Customer: **${appointment.customer_name}** (${appointment.customer_email})${calendarNote}${emailNote}\n\nWe look forward to seeing you at SalonAI! Is there anything else you need?`,
       pendingBooking: null,
       appointment,
     });

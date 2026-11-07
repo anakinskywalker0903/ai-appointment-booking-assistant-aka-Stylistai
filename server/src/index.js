@@ -34,7 +34,7 @@ app.use('/api/availability', availabilityRoutes);
 app.use('/api/calendar', calendarRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
