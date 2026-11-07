@@ -1,5 +1,21 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import posthog from './services/posthog';
+
+function PostHogPageTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    try {
+      posthog.capture('$pageview', {
+        $current_url: window.location.href,
+        path: location.pathname,
+      });
+    } catch {
+      /* ignore if not yet initialized */
+    }
+  }, [location]);
+  return null;
+}
 import { AuthProvider } from './context/AuthContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import Navbar from './components/shared/Navbar';
@@ -17,6 +33,7 @@ export default function App() {
     <AuthProvider>
       <AppointmentProvider>
         <BrowserRouter>
+          <PostHogPageTracker />
           <div className="app-shell">
             <Navbar />
             <main className="app-content">
