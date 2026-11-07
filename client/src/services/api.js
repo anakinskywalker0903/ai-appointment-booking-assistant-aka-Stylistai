@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const defaultBaseUrl = import.meta.env.PROD
+  ? 'https://ai-appointment-booking-assistant.vercel.app/api'
+  : 'http://localhost:3001/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_URL || defaultBaseUrl,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
