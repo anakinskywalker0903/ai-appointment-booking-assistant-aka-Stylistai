@@ -7,7 +7,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TOKEN_PATH = path.join(__dirname, '../../tokens/google-tokens.json');
+const LOCAL_TOKEN_PATH = path.join(__dirname, '../../tokens/google-tokens.json');
+const TMP_TOKEN_PATH = '/tmp/google-tokens.json';
+const isServerless = process.env.VERCEL === '1' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+let memoryTokens = null;
 
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar',
@@ -28,32 +32,57 @@ function getOAuthClient() {
 }
 
 /**
- * Load stored tokens from disk.
+ * Load stored tokens from memory, env, or disk (/tmp on serverless, local on dev).
  * Returns null if not yet authorized.
  */
 function loadTokens() {
+  if (memoryTokens) return memoryTokens;
+
   try {
     if (process.env.GOOGLE_TOKENS_JSON) {
-      return JSON.parse(process.env.GOOGLE_TOKENS_JSON);
+      memoryTokens = JSON.parse(process.env.GOOGLE_TOKENS_JSON);
+      return memoryTokens;
     }
-    if (!fs.existsSync(TOKEN_PATH)) return null;
-    const raw = fs.readFileSync(TOKEN_PATH, 'utf-8');
-    return JSON.parse(raw);
+
+    const pathsToCheck = isServerless 
+      ? [TMP_TOKEN_PATH, LOCAL_TOKEN_PATH] 
+      : [LOCAL_TOKEN_PATH, TMP_TOKEN_PATH];
+
+    for (const p of pathsToCheck) {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, 'utf-8');
+        memoryTokens = JSON.parse(raw);
+        return memoryTokens;
+      }
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
 /**
- * Save tokens to local storage (gitignored).
+ * Save tokens to memory and local storage (/tmp in serverless).
  * Does not log any token values.
  */
 function saveTokens(tokens) {
-  const dir = path.dirname(TOKEN_PATH);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  memoryTokens = tokens;
+
+  try {
+    const targetPath = isServerless ? TMP_TOKEN_PATH : LOCAL_TOKEN_PATH;
+    const dir = path.dirname(targetPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(targetPath, JSON.stringify(tokens, null, 2));
+  } catch (err) {
+    console.warn('[CalendarService] Could not write tokens to primary path:', err.message);
+    try {
+      fs.writeFileSync(TMP_TOKEN_PATH, JSON.stringify(tokens, null, 2));
+    } catch {
+      // Non-blocking in-memory preservation
+    }
   }
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
 }
 
 /**
