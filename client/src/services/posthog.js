@@ -1,6 +1,6 @@
 import posthog from 'posthog-js';
 
-const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY || 'phc_kuB6uVU6SNoAE8JtpPnTTVmaonXQs2jH8FELxRMgyvYt';
+const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY || '';
 const rawHost = import.meta.env.VITE_POSTHOG_HOST;
 const POSTHOG_HOST = (rawHost && !rawHost.includes('us.i.posthog.com'))
   ? rawHost

@@ -31,6 +31,38 @@ const MOCK_SETTINGS = {
   closedDays: ['Sunday'],
 };
 
+// Dynamic date helpers to prevent test expiration
+function getNextOpenDate() {
+  const d = new Date();
+  for (let i = 1; i <= 7; i++) {
+    const candidate = new Date();
+    candidate.setDate(d.getDate() + i);
+    if (candidate.getDay() !== 0) { // not Sunday
+      const year = candidate.getFullYear();
+      const month = String(candidate.getMonth() + 1).padStart(2, '0');
+      const day = String(candidate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+}
+
+function getNextSunday() {
+  const d = new Date();
+  for (let i = 1; i <= 7; i++) {
+    const candidate = new Date();
+    candidate.setDate(d.getDate() + i);
+    if (candidate.getDay() === 0) { // Sunday
+      const year = candidate.getFullYear();
+      const month = String(candidate.getMonth() + 1).padStart(2, '0');
+      const day = String(candidate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+}
+
+const TEST_OPEN_DATE = getNextOpenDate();
+const TEST_SUNDAY = getNextSunday();
+
 describe('Time and String Parsing Helpers', () => {
   test('timeToMinutes and minutesToTime conversions', () => {
     assert.equal(timeToMinutes('09:00'), 540);
@@ -59,7 +91,7 @@ describe('Stylist Collision & Availability Engine', () => {
       {
         id: 'apt-1',
         employeeId: 'emp-1',
-        date: '2026-11-10',
+        date: TEST_OPEN_DATE,
         time: '14:00',
         serviceDuration: 45,
         status: 'confirmed',
@@ -67,15 +99,15 @@ describe('Stylist Collision & Availability Engine', () => {
     ];
 
     // Same stylist, overlapping window 14:15 - 15:00
-    const busy = isStylistBusy('emp-1', '2026-11-10', '14:15', 45, existingAppointments, []);
+    const busy = isStylistBusy('emp-1', TEST_OPEN_DATE, '14:15', 45, existingAppointments, []);
     assert.equal(busy, true);
 
     // Same stylist, non-overlapping window 15:00 - 15:45
-    const free = isStylistBusy('emp-1', '2026-11-10', '15:00', 45, existingAppointments, []);
+    const free = isStylistBusy('emp-1', TEST_OPEN_DATE, '15:00', 45, existingAppointments, []);
     assert.equal(free, false);
 
     // Different stylist at the exact same time
-    const otherStylistFree = isStylistBusy('emp-2', '2026-11-10', '14:15', 45, existingAppointments, []);
+    const otherStylistFree = isStylistBusy('emp-2', TEST_OPEN_DATE, '14:15', 45, existingAppointments, []);
     assert.equal(otherStylistFree, false);
   });
 
@@ -91,11 +123,11 @@ describe('Stylist Collision & Availability Engine', () => {
     ];
 
     // Attempting to book during staff break 13:15
-    const busyDuringBreak = isStylistBusy('emp-1', '2026-11-10', '13:15', 45, [], blockedTimes);
+    const busyDuringBreak = isStylistBusy('emp-1', TEST_OPEN_DATE, '13:15', 45, [], blockedTimes);
     assert.equal(busyDuringBreak, true);
 
     // Attempting to book after staff break 14:00
-    const freeAfterBreak = isStylistBusy('emp-1', '2026-11-10', '14:00', 45, [], blockedTimes);
+    const freeAfterBreak = isStylistBusy('emp-1', TEST_OPEN_DATE, '14:00', 45, [], blockedTimes);
     assert.equal(freeAfterBreak, false);
   });
 });
@@ -105,7 +137,7 @@ describe('Slot Validation & Smart Alternatives Generation', () => {
     const result = validateAndFindSlots({
       service: 'Haircut & Styling',
       stylist: 'Sarah Jenkins',
-      date: '2026-11-10',
+      date: TEST_OPEN_DATE,
       time: '08:00', // Before 09:00 opening
       services: MOCK_SERVICES,
       staffList: MOCK_STAFF,
@@ -120,11 +152,10 @@ describe('Slot Validation & Smart Alternatives Generation', () => {
   });
 
   test('refuses bookings on salon closed days and suggests next open day', () => {
-    // 2026-11-08 is a Sunday
     const result = validateAndFindSlots({
       service: 'Haircut & Styling',
       stylist: 'Sarah Jenkins',
-      date: '2026-11-08',
+      date: TEST_SUNDAY,
       time: '14:00',
       services: MOCK_SERVICES,
       staffList: MOCK_STAFF,
@@ -144,7 +175,7 @@ describe('Slot Validation & Smart Alternatives Generation', () => {
     const result = validateAndFindSlots({
       service: 'Hair Coloring (Balayage)',
       stylist: 'David Miller',
-      date: '2026-11-10',
+      date: TEST_OPEN_DATE,
       time: '14:00',
       services: MOCK_SERVICES,
       staffList: MOCK_STAFF,
@@ -165,7 +196,7 @@ describe('Slot Validation & Smart Alternatives Generation', () => {
       {
         id: 'apt-99',
         employeeId: 'emp-1',
-        date: '2026-11-10',
+        date: TEST_OPEN_DATE,
         time: '14:00',
         serviceDuration: 45,
         status: 'confirmed',
@@ -175,7 +206,7 @@ describe('Slot Validation & Smart Alternatives Generation', () => {
     const result = validateAndFindSlots({
       service: 'Haircut & Styling',
       stylist: 'Sarah Jenkins',
-      date: '2026-11-10',
+      date: TEST_OPEN_DATE,
       time: '14:00',
       services: MOCK_SERVICES,
       staffList: MOCK_STAFF,
@@ -201,7 +232,7 @@ describe('Critical Scenario: Double-Booking / Concurrency Invariant (PDF Page 8,
       const evalSlot = validateAndFindSlots({
         service: 'Haircut & Styling',
         stylist: 'Sarah Jenkins',
-        date: '2026-11-10',
+        date: TEST_OPEN_DATE,
         time,
         services: MOCK_SERVICES,
         staffList: MOCK_STAFF,
