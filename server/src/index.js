@@ -62,8 +62,8 @@ app.get(['/', '/health', '/api/health'], (req, res) => {
 app.use(errorHandler);
 
 if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

@@ -19,6 +19,7 @@ function PostHogPageTracker() {
 import { AuthProvider } from './context/AuthContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import Navbar from './components/shared/Navbar';
+import MobileActionDock from './components/shared/MobileActionDock';
 import ProtectedRoute from './components/shared/ProtectedRoute';
 import LandingGateway from './pages/LandingGateway';
 import ChatPage from './pages/ChatPage';
@@ -89,6 +90,7 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
+            <MobileActionDock />
           </div>
         </BrowserRouter>
       </AppointmentProvider>

@@ -66,6 +66,14 @@
   color: #1e293b;
 }
 
+.cal-date-desktop {
+  display: inline-block;
+}
+
+.cal-date-mobile {
+  display: none;
+}
+
 .calendar-stylist-filter {
   display: flex;
   align-items: center;
@@ -104,6 +112,25 @@
   min-width: 600px;
 }
 
+/* Single Stylist Timetable — fits 100% width on any device without horizontal scroll */
+.timetable-grid--single {
+  min-width: 0 !important;
+  width: 100% !important;
+  table-layout: fixed;
+}
+
+.timetable-grid--single .timetable-time-header,
+.timetable-grid--single .timetable-time-cell {
+  width: 78px;
+  min-width: 78px;
+  max-width: 78px;
+}
+
+.timetable-grid--single .timetable-staff-header,
+.timetable-grid--single .timetable-slot-cell {
+  width: auto;
+}
+
 .timetable-time-header {
   width: 90px;
   padding: 12px;
@@ -114,6 +141,9 @@
   text-transform: uppercase;
   text-align: center;
   border-right: 2px solid #000000;
+  position: sticky;
+  left: 0;
+  z-index: 5;
 }
 
 .timetable-staff-header {
@@ -148,6 +178,9 @@
   border-right: 2px solid #000000;
   text-align: center;
   padding: 10px 8px;
+  position: sticky;
+  left: 0;
+  z-index: 4;
   font-weight: 800;
   font-size: 0.8rem;
   color: #475569;
@@ -313,4 +346,145 @@
 .open-box {
   background: #ffffff;
   border: 1px dashed #94a3b8;
+}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS (devinterio.in Tier Framework)
+══════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .schedule-calendar-container {
+    border-radius: 8px;
+    border-width: 2px;
+  }
+
+  .calendar-toolbar {
+    padding: 10px 12px;
+    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .cal-nav-btn {
+    padding: 6px 8px;
+    min-height: 38px;
+    min-width: 38px;
+  }
+
+  .cal-today-btn {
+    padding: 6px 12px;
+    min-height: 38px;
+    font-size: 0.78rem;
+  }
+
+  .cal-current-date {
+    margin-left: 0;
+    font-size: 0.84rem;
+    font-weight: 800;
+  }
+
+  .cal-date-desktop {
+    display: none;
+  }
+
+  .cal-date-mobile {
+    display: inline-block;
+  }
+
+  .calendar-stylist-filter {
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    min-height: 40px;
+  }
+
+  .cal-select {
+    flex: 1;
+    font-size: 0.8rem;
+  }
+
+  .timetable-time-header,
+  .timetable-time-cell {
+    padding: 8px 4px;
+    font-size: 0.72rem;
+  }
+
+  .timetable-staff-header {
+    padding: 8px 10px;
+  }
+
+  .staff-header-name {
+    font-size: 0.82rem;
+  }
+
+  .staff-header-role {
+    font-size: 0.68rem;
+  }
+
+  .timetable-slot-cell {
+    padding: 4px 6px;
+  }
+
+  .calendar-appt-block {
+    padding: 6px 8px;
+  }
+
+  .appt-block-time {
+    font-size: 0.7rem;
+  }
+
+  .appt-block-badge {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+  }
+
+  .appt-block-client {
+    font-size: 0.78rem;
+  }
+
+  .appt-block-service {
+    font-size: 0.68rem;
+  }
+
+  .calendar-block-chip {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+  }
+
+  .calendar-open-slot {
+    height: 42px;
+  }
+
+  .slot-empty-label {
+    font-size: 0.68rem;
+  }
+
+  .timetable-legend {
+    padding: 10px 12px;
+    gap: 8px 12px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .timetable-grid--single .timetable-time-header,
+  .timetable-grid--single .timetable-time-cell {
+    width: 68px;
+    min-width: 68px;
+    max-width: 68px;
+    font-size: 0.68rem;
+  }
+
+  .cal-current-date {
+    font-size: 0.78rem;
+  }
 }

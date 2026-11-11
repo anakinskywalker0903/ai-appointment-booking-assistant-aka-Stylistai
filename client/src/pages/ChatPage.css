@@ -874,7 +874,7 @@
   .chat-header-right-actions { gap: 6px; }
   .chat-voice-pill-btn { padding: 6px 10px; font-size: 0.70rem; }
   .chat-admin-pill-btn { padding: 6px 12px; font-size: 0.72rem; }
-  .chat-main         { padding: 6px 18px 20px; gap: 10px; }
+  .chat-main         { padding: 6px 18px 80px; gap: 10px; }
   .chat-hero         { padding-top: 14px; gap: 3px; }
   .chat-hero-title   { font-size: 1.25rem; }
   .chat-hero-subtitle { font-size: 0.78rem; }
@@ -891,7 +891,7 @@
   .chat-brand-pill   { padding: 5px 10px; font-size: 0.72rem; }
   .chat-voice-pill-btn { padding: 5px 8px; font-size: 0.65rem; }
   .chat-admin-pill-btn { padding: 5px 10px; font-size: 0.68rem; }
-  .chat-main         { padding: 4px 12px 16px; gap: 8px; }
+  .chat-main         { padding: 4px 12px 85px; gap: 8px; }
   .chat-hero         { padding-top: 10px; gap: 3px; }
   .chat-hero-title   { font-size: 1.15rem; }
   .chat-hero-subtitle { font-size: 0.72rem; }

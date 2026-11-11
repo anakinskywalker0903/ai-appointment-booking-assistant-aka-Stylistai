@@ -6,7 +6,6 @@
  */
 export default function AiHealthWidget({ appointments, calConnected }) {
   const total     = appointments.length;
-  const confirmed = appointments.filter(a => a.status === 'confirmed').length;
   const cancelled = appointments.filter(a => a.status === 'cancelled').length;
   const successRate = total > 0
     ? Math.round(((total - cancelled) / total) * 100)

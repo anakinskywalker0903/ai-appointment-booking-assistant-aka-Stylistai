@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppointments } from '../../context/AppointmentContext';
-import { Clock, PlusCircle, Scissors, CheckCircle, AlertCircle, Phone, Mail, UserCheck, Calendar } from 'lucide-react';
+import { Clock, PlusCircle, Scissors, CheckCircle, AlertCircle, Phone, Mail, UserCheck, Calendar, X } from 'lucide-react';
 import ScheduleCalendar from '../../components/shared/ScheduleCalendar';
 import './StaffDashboard.css';
 
@@ -35,7 +35,8 @@ export default function StaffDashboard() {
     }
   }, [staffList, selectedStylistName]);
 
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'timetable'
+  const [activeMainTab, setActiveMainTab] = useState('bookings'); // 'bookings' | 'timetable' | 'services_breaks'
+  const [bookingFilter, setBookingFilter] = useState('all'); // 'all' | 'upcoming' | 'completed' | 'cancelled'
   const [selectedAptDetails, setSelectedAptDetails] = useState(null);
 
   const staffAppointments = getAppointmentsForStaff(selectedStylistName);
@@ -44,7 +45,7 @@ export default function StaffDashboard() {
     s.name.toLowerCase() === selectedStylistName.toLowerCase()
   );
 
-  // Services this stylist is certified to provide (Spec Page 5 & 9)
+  // Services this stylist is certified to provide
   const myServices = (services || []).filter(srv =>
     currentStylistProfile?.assignedServiceIds?.includes(srv.id)
   );
@@ -93,20 +94,33 @@ export default function StaffDashboard() {
     setTimeout(() => setFeedback(null), 3000);
   };
 
+  // Filtered bookings
+  const filteredStaffBookings = staffAppointments.filter(apt => {
+    if (bookingFilter === 'upcoming') return apt.status === 'confirmed' || apt.status === 'pending';
+    if (bookingFilter === 'completed') return apt.status === 'completed';
+    if (bookingFilter === 'cancelled') return apt.status === 'cancelled';
+    return true;
+  });
+
+  const upcomingCount = staffAppointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length;
+  const completedCount = staffAppointments.filter(a => a.status === 'completed').length;
+  const cancelledCount = staffAppointments.filter(a => a.status === 'cancelled').length;
+
   return (
     <div className="staff-page">
+      {/* Top Header */}
       <div className="staff-header">
         <div>
-          <h1 className="staff-title">Staff Portal</h1>
+          <h1 className="staff-title">Stylist & Staff Schedule</h1>
           <p className="staff-subtitle">
-            Viewing schedule for: <strong>{selectedStylistName}</strong>. Manage your appointments, update client statuses, and set schedule breaks.
+            Manage your client appointments, update statuses, view visual timetable, and control shift breaks.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Stylist Selector Dropdown */}
+        <div className="staff-header-controls">
+          {/* Stylist Selector */}
           <div className="stylist-selector-container">
-            <UserCheck size={17} style={{ color: 'var(--orange)' }} />
+            <UserCheck size={18} style={{ color: 'var(--orange)' }} />
             <label htmlFor="stylist-select" className="stylist-selector-label">Stylist:</label>
             <select
               id="stylist-select"
@@ -122,18 +136,18 @@ export default function StaffDashboard() {
             </select>
           </div>
 
-          {/* Live Availability Toggle */}
+          {/* Live Availability Switch */}
           <div className="availability-card">
             <div className="toggle-label">
               <span className={`status-dot ${isAvailable ? 'dot-active' : 'dot-blocked'}`}></span>
-              <span>Status: <strong>{isAvailable ? 'Taking Bookings' : 'Schedule Paused'}</strong></span>
+              <span><strong>{isAvailable ? 'Taking Bookings' : 'Paused'}</strong></span>
             </div>
             <button
               type="button"
               onClick={() => setIsAvailable(!isAvailable)}
               className={`btn-toggle ${isAvailable ? 'btn-toggle-on' : 'btn-toggle-off'}`}
             >
-              {isAvailable ? 'Pause Schedule' : 'Resume Schedule'}
+              {isAvailable ? 'Pause Shift' : 'Resume Shift'}
             </button>
           </div>
         </div>
@@ -146,36 +160,198 @@ export default function StaffDashboard() {
         </div>
       )}
 
-      {/* View Switcher: List vs Timetable */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            type="button"
-            className={`btn-toggle ${viewMode === 'list' ? 'btn-toggle-on' : 'btn-toggle-off'}`}
-            onClick={() => setViewMode('list')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px' }}
-          >
-            <Clock size={15} />
-            <span>Schedule List</span>
-          </button>
-          <button
-            type="button"
-            className={`btn-toggle ${viewMode === 'timetable' ? 'btn-toggle-on' : 'btn-toggle-off'}`}
-            onClick={() => setViewMode('timetable')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px' }}
-          >
-            <Calendar size={15} />
-            <span>Visual Timetable Grid</span>
-          </button>
+      {/* Hero Stylist Card */}
+      <div className="staff-stylist-hero-card">
+        <div className="staff-stylist-avatar">
+          {selectedStylistName.charAt(0)}
         </div>
-
-        <div style={{ fontSize: '0.8rem', color: '#555', fontWeight: 700 }}>
-          {staffAppointments.length} assigned booking(s) for {selectedStylistName}
+        <div className="staff-stylist-info">
+          <h2>{selectedStylistName}</h2>
+          <span className="staff-stylist-role">{currentStylistProfile?.role || 'Professional Stylist'}</span>
+          <p className="staff-stylist-bio">
+            Certified for {myServices.length} salon treatments • {currentStylistBlocks.length} schedule break(s) configured.
+          </p>
         </div>
       </div>
 
-      {viewMode === 'timetable' ? (
-        <div style={{ marginBottom: 24 }}>
+      {/* Main Segmented Navigation Tabs (Matching Customer Bookings Pattern) */}
+      <div className="staff-main-tabs">
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('bookings')}
+          className={`staff-tab-btn ${activeMainTab === 'bookings' ? 'active' : ''}`}
+        >
+          <Clock size={16} />
+          <span>Assigned Bookings ({staffAppointments.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('timetable')}
+          className={`staff-tab-btn ${activeMainTab === 'timetable' ? 'active' : ''}`}
+        >
+          <Calendar size={16} />
+          <span>Visual Timetable Grid</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('services_breaks')}
+          className={`staff-tab-btn ${activeMainTab === 'services_breaks' ? 'active' : ''}`}
+        >
+          <Scissors size={16} />
+          <span>Certified Services & Breaks ({myServices.length})</span>
+        </button>
+      </div>
+
+      {/* ── TAB 1: ASSIGNED BOOKINGS LIST ── */}
+      {activeMainTab === 'bookings' && (
+        <div className="staff-bookings-section">
+          {/* Sub Filters */}
+          <div className="staff-filter-tabs">
+            <button
+              type="button"
+              onClick={() => setBookingFilter('all')}
+              className={`staff-filter-chip ${bookingFilter === 'all' ? 'active' : ''}`}
+            >
+              All ({staffAppointments.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setBookingFilter('upcoming')}
+              className={`staff-filter-chip ${bookingFilter === 'upcoming' ? 'active' : ''}`}
+            >
+              Upcoming ({upcomingCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setBookingFilter('completed')}
+              className={`staff-filter-chip ${bookingFilter === 'completed' ? 'active' : ''}`}
+            >
+              Completed ({completedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setBookingFilter('cancelled')}
+              className={`staff-filter-chip ${bookingFilter === 'cancelled' ? 'active' : ''}`}
+            >
+              Cancelled ({cancelledCount})
+            </button>
+          </div>
+
+          {filteredStaffBookings.length === 0 ? (
+            <div className="staff-empty-card">
+              <Clock size={44} style={{ color: '#888', marginBottom: 10 }} />
+              <h3>No bookings in this filter</h3>
+              <p>Appointments booked by customers or the AI Assistant will appear here in real time.</p>
+            </div>
+          ) : (
+            <div className="staff-appointments-grid">
+              {filteredStaffBookings.map((apt) => (
+                <div
+                  key={apt.id}
+                  className={`staff-booking-card status-border-${apt.status}`}
+                  onClick={() => setSelectedAptDetails(apt)}
+                >
+                  <div className="staff-booking-top">
+                    <div>
+                      <h3 className="staff-booking-client-name">
+                        {apt.customerName || apt.customer_name || 'Salon Client'}
+                      </h3>
+                      <span className="staff-booking-client-tag">Client</span>
+                    </div>
+                    <span className={`staff-status-badge badge-${apt.status}`}>
+                      {apt.status?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="staff-booking-details">
+                    <div className="detail-row">
+                      <Scissors size={14} />
+                      <span>{apt.serviceName || apt.services?.name || 'Haircut'}</span>
+                      <strong style={{ marginLeft: 6, color: 'var(--orange)' }}>
+                        {apt.servicePrice || (apt.services?.price ? `$${apt.services.price}` : '')}
+                      </strong>
+                    </div>
+
+                    <div className="detail-row">
+                      <Calendar size={14} />
+                      <span>{apt.date || apt.appointment_date}</span>
+                    </div>
+
+                    <div className="detail-row">
+                      <Clock size={14} />
+                      <span>{apt.time || apt.appointment_time} ({apt.serviceDuration || 45} mins)</span>
+                    </div>
+
+                    {(apt.customerEmail || apt.customer_email) && (
+                      <div className="detail-row contact-row">
+                        <Mail size={13} />
+                        <span>{apt.customerEmail || apt.customer_email}</span>
+                      </div>
+                    )}
+
+                    {(apt.customerPhone || apt.customer_phone) && (
+                      <div className="detail-row contact-row">
+                        <Phone size={13} />
+                        <span>{apt.customerPhone || apt.customer_phone}</span>
+                      </div>
+                    )}
+
+                    {apt.notes && (
+                      <div className="staff-booking-notes">
+                        <em>"{apt.notes}"</em>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="staff-booking-actions" onClick={(e) => e.stopPropagation()}>
+                    {apt.status !== 'completed' && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(apt.id, 'completed')}
+                        className="btn-staff-action complete"
+                      >
+                        <CheckCircle size={14} />
+                        <span>Complete</span>
+                      </button>
+                    )}
+                    {apt.status === 'pending' && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(apt.id, 'confirmed')}
+                        className="btn-staff-action confirm"
+                      >
+                        <span>Confirm</span>
+                      </button>
+                    )}
+                    {apt.status !== 'cancelled' && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(apt.id, 'cancelled')}
+                        className="btn-staff-action cancel"
+                      >
+                        <span>Cancel</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAptDetails(apt)}
+                      className="btn-staff-action details"
+                    >
+                      <span>Details</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB 2: VISUAL TIMETABLE GRID ── */}
+      {activeMainTab === 'timetable' && (
+        <div className="staff-timetable-section">
           <ScheduleCalendar
             appointments={staffAppointments}
             staffList={staffList}
@@ -185,285 +361,83 @@ export default function StaffDashboard() {
             onAppointmentClick={(apt) => setSelectedAptDetails(apt)}
           />
         </div>
-      ) : (
-        <div className="staff-grid">
-          {/* Left: Assigned Appointments */}
-          <div className="schedule-section">
-            <div className="section-header">
-              <h2>Assigned Appointments</h2>
-              <span className="badge-count">{staffAppointments.length} bookings</span>
-            </div>
-
-            {staffAppointments.length === 0 ? (
-              <div className="empty-state-staff">
-                <Clock size={36} style={{ color: '#888', marginBottom: 8 }} />
-                <h3>No appointments assigned yet</h3>
-                <p>When clients book with {selectedStylistName} in the AI Assistant, they will appear here in real-time.</p>
-              </div>
-            ) : (
-              <div className="timeline-cards">
-                {staffAppointments.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`timeline-card status-border-${item.status}`}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setSelectedAptDetails(item)}
-                  >
-                    <div className="timeline-time">
-                      <Clock size={16} />
-                      <span>{item.time}</span>
-                      <small style={{ fontSize: '10px', color: '#666' }}>{item.date}</small>
-                    </div>
-
-                    <div className="timeline-content">
-                      <div className="client-header">
-                        <div>
-                          <h3 className="client-name">{item.customerName || item.customer_name || 'Client'}</h3>
-                          <span className="client-role-badge">Customer</span>
-                        </div>
-                        <span className={`staff-status-badge badge-${item.status}`}>
-                          {item.status.toUpperCase()}
-                        </span>
-                      </div>
-
-                      <div className="service-badge">
-                        <Scissors size={14} />
-                        <span>{item.serviceName || item.services?.name || 'Haircut'}</span>
-                        <small style={{ marginLeft: 6, opacity: 0.8 }}>({item.serviceDuration || 45} mins)</small>
-                      </div>
-
-                      <div className="client-contact-row">
-                        <div className="contact-item">
-                          <Mail size={13} />
-                          <span>{item.customerEmail || item.customer_email || 'client@example.com'}</span>
-                        </div>
-                        {item.customerPhone && (
-                          <div className="contact-item">
-                            <Phone size={13} />
-                            <span>{item.customerPhone}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {item.notes && (
-                        <p className="item-notes">"{item.notes}"</p>
-                      )}
-
-                      {/* Actions: Confirmed / Completed / Cancelled */}
-                      <div className="staff-actions-row" onClick={(e) => e.stopPropagation()}>
-                        {item.status !== 'completed' && (
-                          <button
-                            type="button"
-                            onClick={() => handleStatusChange(item.id, 'completed')}
-                            className="btn-staff-action complete"
-                          >
-                            <CheckCircle size={14} />
-                            <span>Mark Completed</span>
-                          </button>
-                        )}
-                        {item.status !== 'cancelled' && (
-                          <button
-                            type="button"
-                            onClick={() => handleStatusChange(item.id, 'cancelled')}
-                            className="btn-staff-action cancel"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                        {item.status === 'pending' && (
-                          <button
-                            type="button"
-                            onClick={() => handleStatusChange(item.id, 'confirmed')}
-                            className="btn-staff-action confirm"
-                          >
-                            Confirm
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Right Column: Shift Breaks + Services Provided */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Blocked Times & Shift Breaks */}
-            <div className="blocks-section">
-              <div className="section-header">
-                <h2>Shift Breaks & Blocked Hours</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowBlockModal(true)}
-                  className="btn-add-block"
-                >
-                  <PlusCircle size={15} />
-                  <span>Block Time</span>
-                </button>
-              </div>
-
-              <p className="block-desc">
-                Breaks added here are immediately enforced by the AI Assistant so clients cannot book over your break.
-              </p>
-
-              <div className="blocks-list">
-                {currentStylistBlocks.length === 0 ? (
-                  <p style={{ fontSize: '13px', color: '#777', fontStyle: 'italic' }}>
-                    No active breaks blocked for this stylist.
-                  </p>
-                ) : (
-                  currentStylistBlocks.map((b) => (
-                    <div key={b.id} className="block-item">
-                      <div className="block-info">
-                        <span className="block-reason">{b.reason}</span>
-                        <span className="block-hours">
-                          {b.start} – {b.end} ({b.recurring || 'Daily'})
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveBlock(b.id)}
-                        className="btn-remove-block"
-                        title="Remove break"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Services Provided (Spec Page 5 & 9) */}
-            <div className="blocks-section" style={{ background: '#ffffff' }}>
-              <div className="section-header">
-                <h2>Services I Provide ({myServices.length})</h2>
-                <Scissors size={18} style={{ color: 'var(--orange)' }} />
-              </div>
-
-              <p className="block-desc">
-                Treatments assigned to {selectedStylistName}. Customers can book these with you via the AI Assistant.
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {myServices.length === 0 ? (
-                  <p style={{ fontSize: '12px', color: '#777', fontStyle: 'italic' }}>
-                    No services certified yet. Contact the Business Admin.
-                  </p>
-                ) : (
-                  myServices.map(s => (
-                    <div
-                      key={s.id}
-                      style={{
-                        padding: '10px 12px',
-                        border: '1.5px solid #000',
-                        borderRadius: 8,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: '#f8fafc',
-                      }}
-                    >
-                      <div>
-                        <strong style={{ fontSize: '0.85rem' }}>{s.name}</strong>
-                        <div style={{ fontSize: '0.72rem', color: '#666' }}>
-                          ⏱️ {s.duration || 45} mins
-                        </div>
-                      </div>
-                      <span style={{ fontWeight: 800, color: 'var(--orange)', fontSize: '0.9rem' }}>
-                        ${s.price}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
-      {/* Customer Appointment Details Modal (Spec Page 5 & 9) */}
-      {selectedAptDetails && (
-        <div className="modal-overlay" style={{ display: 'flex' }}>
-          <div className="modal-content" style={{ maxWidth: 500 }}>
-            <div className="modal-header">
-              <h2>Appointment Details</h2>
+      {/* ── TAB 3: CERTIFIED SERVICES & SHIFT BREAKS ── */}
+      {activeMainTab === 'services_breaks' && (
+        <div className="staff-services-breaks-grid">
+          {/* Certified Services */}
+          <div className="staff-subcard">
+            <div className="subcard-header">
+              <div>
+                <h2>Services I Provide ({myServices.length})</h2>
+                <p>Treatments certified for {selectedStylistName}.</p>
+              </div>
+              <Scissors size={20} style={{ color: 'var(--orange)' }} />
+            </div>
+
+            <div className="staff-services-list">
+              {myServices.length === 0 ? (
+                <p style={{ color: '#777', fontStyle: 'italic', fontSize: '13px' }}>
+                  No services currently assigned to this stylist.
+                </p>
+              ) : (
+                myServices.map((srv) => (
+                  <div key={srv.id} className="staff-service-item">
+                    <div className="staff-service-info">
+                      <strong>{srv.name}</strong>
+                      <p>{srv.description}</p>
+                    </div>
+                    <div className="staff-service-pills">
+                      <span className="price-pill">${srv.price}</span>
+                      <span className="duration-pill"><Clock size={12} /> {srv.duration} min</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Shift Breaks & Blocked Hours */}
+          <div className="staff-subcard">
+            <div className="subcard-header">
+              <div>
+                <h2>Shift Breaks & Blocked Hours ({currentStylistBlocks.length})</h2>
+                <p>Breaks are respected by the AI booking engine.</p>
+              </div>
               <button
                 type="button"
-                onClick={() => setSelectedAptDetails(null)}
-                className="modal-close-btn"
+                onClick={() => setShowBlockModal(true)}
+                className="btn-add-break"
               >
-                ×
+                <PlusCircle size={15} />
+                <span>+ Block Time</span>
               </button>
             </div>
 
-            <div style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span className={`staff-status-badge badge-${selectedAptDetails.status}`}>
-                  {selectedAptDetails.status.toUpperCase()}
-                </span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#15803d' }}>
-                  Fee: ${selectedAptDetails.services?.price || selectedAptDetails.servicePrice || 45}
-                </span>
-              </div>
-
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1.5px solid #000', marginBottom: 14 }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#666', textTransform: 'uppercase' }}>CLIENT INFORMATION</div>
-                <div style={{ fontSize: '1rem', fontWeight: 900, marginTop: 4 }}>
-                  {selectedAptDetails.customerName || selectedAptDetails.customer_name || 'Client'}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', marginTop: 4 }}>
-                  <Mail size={13} />
-                  <span>{selectedAptDetails.customerEmail || selectedAptDetails.customer_email || '—'}</span>
-                </div>
-                {selectedAptDetails.customerPhone && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', marginTop: 4 }}>
-                    <Phone size={13} />
-                    <span>{selectedAptDetails.customerPhone}</span>
+            <div className="staff-breaks-list">
+              {currentStylistBlocks.length === 0 ? (
+                <p style={{ color: '#777', fontStyle: 'italic', fontSize: '13px' }}>
+                  No active breaks blocked for {selectedStylistName}.
+                </p>
+              ) : (
+                currentStylistBlocks.map((b) => (
+                  <div key={b.id} className="staff-break-item">
+                    <div className="staff-break-info">
+                      <strong>{b.reason}</strong>
+                      <span>{b.start} – {b.end} ({b.recurring || 'Daily'})</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBlock(b.id)}
+                      className="btn-delete-break"
+                      title="Remove break"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
-                )}
-              </div>
-
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1.5px solid #000', marginBottom: 14 }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#666', textTransform: 'uppercase' }}>SERVICE & SCHEDULE</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 900, marginTop: 4 }}>
-                  {selectedAptDetails.serviceName || selectedAptDetails.services?.name}
-                </div>
-                <div style={{ fontSize: '0.82rem', color: '#444', marginTop: 4 }}>
-                  📅 Date: <strong>{selectedAptDetails.date || selectedAptDetails.appointment_date}</strong> at <strong>{selectedAptDetails.time || selectedAptDetails.appointment_time}</strong>
-                </div>
-                <div style={{ fontSize: '0.82rem', color: '#444', marginTop: 2 }}>
-                  ⏱️ Duration: <strong>{selectedAptDetails.serviceDuration || selectedAptDetails.services?.duration_min || 45} mins</strong>
-                </div>
-                {selectedAptDetails.notes && (
-                  <div style={{ marginTop: 8, fontSize: '0.82rem', fontStyle: 'italic', background: '#fff', padding: 8, borderRadius: 6, border: '1px solid #ddd' }}>
-                    Note: "{selectedAptDetails.notes}"
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setSelectedAptDetails(null)}
-                  className="btn-modal-cancel"
-                >
-                  Close
-                </button>
-                {selectedAptDetails.status !== 'completed' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleStatusChange(selectedAptDetails.id, 'completed');
-                      setSelectedAptDetails(null);
-                    }}
-                    className="btn-modal-submit"
-                  >
-                    Mark as Completed
-                  </button>
-                )}
-              </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -474,7 +448,7 @@ export default function StaffDashboard() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>Block Schedule Break</h2>
+              <h2>Block Stylist Break</h2>
               <button
                 type="button"
                 onClick={() => setShowBlockModal(false)}
@@ -485,18 +459,19 @@ export default function StaffDashboard() {
             </div>
 
             <form onSubmit={handleAddBlock} className="modal-form">
-              <p style={{ fontSize: '13px', color: '#555', marginBottom: 12 }}>
-                Blocking time for <strong>{selectedStylistName}</strong>. The AI Assistant will refuse customer bookings during this window.
-              </p>
+              <div className="modal-form-group">
+                <label>Stylist</label>
+                <input type="text" value={selectedStylistName} disabled />
+              </div>
 
               <div className="modal-form-group">
-                <label>Reason / Activity</label>
+                <label>Break Reason / Label</label>
                 <input
                   type="text"
-                  required
-                  placeholder="e.g. Lunch Break, Training, Personal"
+                  placeholder="e.g. Lunch Break, Training, Personal Time"
                   value={blockReason}
                   onChange={(e) => setBlockReason(e.target.value)}
+                  required
                 />
               </div>
 
@@ -505,18 +480,18 @@ export default function StaffDashboard() {
                   <label>Start Time</label>
                   <input
                     type="time"
-                    required
                     value={blockStart}
                     onChange={(e) => setBlockStart(e.target.value)}
+                    required
                   />
                 </div>
                 <div className="modal-form-group">
                   <label>End Time</label>
                   <input
                     type="time"
-                    required
                     value={blockEnd}
                     onChange={(e) => setBlockEnd(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -530,10 +505,66 @@ export default function StaffDashboard() {
                   Cancel
                 </button>
                 <button type="submit" className="btn-modal-submit">
-                  Save Block
+                  Save Break Block
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Appointment Details Modal */}
+      {selectedAptDetails && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Booking Details</h2>
+              <button
+                type="button"
+                onClick={() => setSelectedAptDetails(null)}
+                className="modal-close-btn"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-details-body">
+              <div className="detail-item">
+                <span className="detail-label">Client Name</span>
+                <strong>{selectedAptDetails.customerName || selectedAptDetails.customer_name || 'Client'}</strong>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Service</span>
+                <strong>{selectedAptDetails.serviceName || selectedAptDetails.services?.name}</strong>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Price & Duration</span>
+                <span>{selectedAptDetails.servicePrice || (selectedAptDetails.services?.price ? `$${selectedAptDetails.services.price}` : '')} ({selectedAptDetails.serviceDuration || 45} mins)</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Date & Time</span>
+                <span>{selectedAptDetails.date || selectedAptDetails.appointment_date} at {selectedAptDetails.time || selectedAptDetails.appointment_time}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Status</span>
+                <span className={`staff-status-badge badge-${selectedAptDetails.status}`}>{selectedAptDetails.status?.toUpperCase()}</span>
+              </div>
+              {selectedAptDetails.notes && (
+                <div className="detail-item">
+                  <span className="detail-label">Client Notes</span>
+                  <em>"{selectedAptDetails.notes}"</em>
+                </div>
+              )}
+            </div>
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button
+                type="button"
+                onClick={() => setSelectedAptDetails(null)}
+                className="btn-modal-submit"
+                style={{ width: '100%' }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

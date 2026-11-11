@@ -517,7 +517,7 @@ export default function AdminPage() {
             </div>
 
             {/* Extended Analytics Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginBottom: 18 }}>
+            <div className="admin-analytics-grid">
               <div className="admin-status-card" style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
                 <div>
                   <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#166534' }}>

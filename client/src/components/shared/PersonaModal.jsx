@@ -35,7 +35,7 @@ export default function PersonaModal({ isOpen, onClose }) {
           </div>
           <h2 className="persona-modal-title">Switch Persona & Explore</h2>
           <p className="persona-modal-subtitle">
-            Experience StylistAI V2 from different perspectives. Selecting a persona updates your permissions and views immediately.
+            Experience StylistAI from different perspectives. Selecting a persona updates your permissions and views immediately.
           </p>
         </div>
 

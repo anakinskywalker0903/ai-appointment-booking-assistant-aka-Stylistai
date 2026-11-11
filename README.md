@@ -1,7 +1,7 @@
 # ✂️ StylistAI — AI-Powered Appointment Booking Assistant
 
-[![Live Frontend](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://ai-appointment-booking-assistant.vercel.app/)
-[![Live Backend](https://img.shields.io/badge/API%20Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://ai-appointment-booking-assistant.onrender.com/api/health)
+[![Live Frontend](https://img.shields.io/badge/Live%20Demo-stylistai.dev-black?style=for-the-badge&logo=vercel)](https://stylistai.dev/)
+[![Live Backend](https://img.shields.io/badge/API%20Backend-Vercel-black?style=for-the-badge&logo=vercel)](https://ai-appointment-booking-assistant.vercel.app/api/health)
 [![AI Engine](https://img.shields.io/badge/AI%20Engine-Groq%20LLaMA%203.3%2070B-FF6F20?style=for-the-badge)](https://groq.com/)
 [![Database](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
 [![Google Calendar](https://img.shields.io/badge/Sync-Google%20Calendar%20OAuth-4285F4?style=for-the-badge&logo=googlecalendar)](https://developers.google.com/calendar)
@@ -12,9 +12,11 @@
 
 ## 🌐 Live Deployments & Demo Links
 
-* **Live Web App (Client):** [https://ai-appointment-booking-assistant.vercel.app/](https://ai-appointment-booking-assistant.vercel.app/)
-* **Admin Dashboard:** [https://ai-appointment-booking-assistant.vercel.app/admin](https://ai-appointment-booking-assistant.vercel.app/admin) *(Passphrase: `admin123`)*
-* **Backend API (Health Endpoint):** [https://ai-appointment-booking-assistant.onrender.com/api/health](https://ai-appointment-booking-assistant.onrender.com/api/health)
+* **Live Web App (Client):** [https://ai-appointment-booking-assistant-t6.vercel.app/](https://ai-appointment-booking-assistant-t6.vercel.app/) *(Custom Domain: [https://stylistai.dev/](https://stylistai.dev/))*
+* **Admin Operations Command Center:** [https://ai-appointment-booking-assistant-t6.vercel.app/admin](https://ai-appointment-booking-assistant-t6.vercel.app/admin) *(Passphrase: `admin123`)*
+* **Staff & Stylist Portal:** [https://ai-appointment-booking-assistant-t6.vercel.app/staff](https://ai-appointment-booking-assistant-t6.vercel.app/staff)
+* **Customer Bookings Portal:** [https://ai-appointment-booking-assistant-t6.vercel.app/dashboard](https://ai-appointment-booking-assistant-t6.vercel.app/dashboard)
+* **Backend API (Health Endpoint):** [https://ai-appointment-booking-assistant.vercel.app/api/health](https://ai-appointment-booking-assistant.vercel.app/api/health)
 * **Architecture & System Guide:** [`HOW_IT_WORKS.md`](./HOW_IT_WORKS.md)
 
 ---
@@ -286,8 +288,44 @@ Open **`http://localhost:5173`** in your browser.
 
 ---
 
-## 👥 Authors & Acknowledgments
+## 👥 Engineering Team & Contributions
 
-* **Built by:** Rohit Dubey ([@anakinskywalker0903](https://github.com/anakinskywalker0903))
-* **AI Architecture:** Groq LLaMA 3.3 70B & Supabase PostgreSQL
-* **Styling Inspiration:** Neo-Brutalist Industrial Design System
+### 🌟 Project Co-Creators
+
+| Engineer | Core Responsibilities & Contributions | Profile |
+|---|---|---|
+| **Rohit Dubey** | **Lead Frontend Architect, UI/UX & Client Integrations**<br>• Designed the end-to-end **Neo-Brutalist Industrial Design System** with Space Grotesk typography, high-contrast badges, and micro-interactions.<br>• Engineered the **Mobile-First Responsive Framework** (adapted from `devinterio.in`), featuring the fixed bottom action dock (`MobileActionDock`), horizontal swipeable touch carousels (`scroll-snap-type: x mandatory`), $2\times 2$ KPI stat grids, and dynamic `100dvh` viewport management.<br>• Built the **Customer Booking Portal** (`/dashboard`) with an interactive salon services catalog and 1-click AI Stylist booking dispatch.<br>• Built the **Staff Portal** (`/staff`) with live shift pause/resume toggling, assigned bookings management, and the visual timetable grid (`ScheduleCalendar`).<br>• Built the **Admin Operations Command Center** (`/admin`) with multi-tab operations, real-time KPI matrix, Today's Timeline, AI booking intent telemetry, and customer directory.<br>• Integrated client-side **Web Speech API** voice synthesis, **EmailJS** branded HTML confirmation receipts, **Google Calendar OAuth 2.0** two-way sync, **PostHog** product analytics, and dynamic LAN IP routing (`api.js`) for seamless mobile device testing. | [@anakinskywalker0903](https://github.com/anakinskywalker0903) |
+| **Dhruv Singh** | **AI Infrastructure, Database Architecture & DevOps**<br>• Architected the **AI Engine & Multi-Model Fallback Cascade** using Groq LLaMA 3.3 70B (`llama-3.3-70b-versatile`), with instant fallbacks to `llama-3.1-8b-instant` and `gemma2-9b-it`.<br>• Implemented **Multi-Key Fallback Rotation** and lazy-loaded Groq clients to ensure 99.99% uptime and prevent cold-start crashes.<br>• Designed and maintained the **Supabase PostgreSQL Schema**, relational table structures (`services`, `employees`, `employee_services`, `appointments`, `business_settings`), and atomic database constraints preventing double-booking race conditions.<br>• Built the **CI/CD Pipeline** using GitHub Actions, upgraded runners to Node.js v22 for native WebSocket support with Supabase, synchronized lockfiles, and created PR/Issue templates.<br>• Formulated the **Role-Based Access Control (RBAC)** security architecture, API contracts, Zod schema validation, and serverless path normalization. | [@dheuv0812](https://github.com/dheuv0812) |
+
+---
+
+## 🌐 Live Deployments & Verified Endpoints
+
+* **🚀 Live Web Application (Client):** [https://ai-appointment-booking-assistant-t6.vercel.app/](https://ai-appointment-booking-assistant-t6.vercel.app/) *(Custom Domain: [https://stylistai.dev/](https://stylistai.dev/))*
+* **🛡️ Admin Operations Command Center:** [https://ai-appointment-booking-assistant-t6.vercel.app/admin](https://ai-appointment-booking-assistant-t6.vercel.app/admin) *(Passphrase: `admin123`)*
+* **✂️ Staff & Stylist Portal:** [https://ai-appointment-booking-assistant-t6.vercel.app/staff](https://ai-appointment-booking-assistant-t6.vercel.app/staff)
+* **📅 Customer Bookings Portal:** [https://ai-appointment-booking-assistant-t6.vercel.app/dashboard](https://ai-appointment-booking-assistant-t6.vercel.app/dashboard)
+* **⚙️ API Backend (Health Endpoint):** [https://ai-appointment-booking-assistant.vercel.app/api/health](https://ai-appointment-booking-assistant.vercel.app/api/health)
+* **📊 Product Analytics Dashboard:** [PostHog EU Cloud](https://eu.posthog.com/)
+* **📚 Architecture & Technical Blueprint:** [`HOW_IT_WORKS.md`](./HOW_IT_WORKS.md)
+
+---
+
+## 📱 Mobile Architecture & Responsive Framework (Version 2.0 Updates)
+
+StylistAI was redesigned to provide an app-like experience across modern mobile devices (specifically optimized for **iPhone 16 / 15 / 14 @ 393px**, **Realme 9 Pro+**, and **iPhone SE @ 375px**), adapted from the responsive architecture of `devinterio.in`:
+
+1. **Fixed Mobile Action Dock (`MobileActionDock.jsx`):** Persistent glassmorphic bottom navigation dock providing 1-tap switching between Landing Gateway, Admin, AI Stylist, and Client/Staff portals with safe-area inset protection.
+2. **Horizontal Swipeable Touch Carousels:** Transformed cramped vertical scroll boxes ("Today's Appointments" and "AI Booking Feed") into smooth horizontal carousels with native touch momentum (`-webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory`).
+3. **Clean $2 \times 2$ KPI & Analytics Grids:** Eliminated squashed horizontal "pills" where icons collided with text, replacing them with structured vertical-stack cards displaying bold stat values, high-contrast labels, and status badges.
+4. **Single-Stylist Responsive Timetable:** Sized the hourly schedule timetable (`ScheduleCalendar.jsx`) to fit $100\%$ of mobile phone screens with fixed columns, compact date badges (`Wed, Nov 11`), and sticky time headers when browsing multiple stylists.
+5. **Dynamic LAN IP Routing for Mobile Testing:** Configured `api.js` to dynamically detect `window.location.hostname` when connecting over Wi-Fi (`http://192.168.x.x:5173`), routing API calls directly to the host computer's backend on port `3001` and eliminating `[API Error] Network Error`.
+6. **Zero Dead Gap Layout:** Eliminated double-bottom padding across Admin and Staff pages, positioning the lowest widget comfortably above the mobile action dock.
+
+---
+
+## 📄 License & Attribution
+
+This project was built for the **AI-Powered Appointment Booking Assistant** technical showcase.
+* **Core Philosophy:** *"AI should understand the user. The application should enforce the rules."*
+* **License:** MIT License. All rights reserved.

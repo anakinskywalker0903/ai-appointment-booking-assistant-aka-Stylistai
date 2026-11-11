@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppointments } from '../../context/AppointmentContext';
 import { validateAndFindSlots } from '../../services/availabilityEngine';
-import { Calendar, Clock, AlertCircle, CheckCircle, XCircle, Sparkles, Scissors, Bot, Settings } from 'lucide-react';
+import { Calendar, Clock, AlertCircle, CheckCircle, XCircle, Sparkles, Scissors, Bot, Settings, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './CustomerDashboard.css';
 
@@ -21,6 +21,8 @@ export default function CustomerDashboard() {
 
   const customerAppointments = getAppointmentsForCustomer(user?.email);
 
+  // Default to bookings if user has active appointments, otherwise show services menu
+  const [mainTab, setMainTab] = useState(customerAppointments.length > 0 ? 'bookings' : 'services');
   const [filter, setFilter] = useState('upcoming');
   const [feedbackMessage, setFeedbackMessage] = useState(null);
 
@@ -113,31 +115,19 @@ export default function CustomerDashboard() {
       {/* Top Header */}
       <div className="dashboard-header">
         <div>
-          <h1 className="dashboard-title">Customer Portal</h1>
+          <h1 className="dashboard-title">Customer Appointments</h1>
           <p className="dashboard-subtitle">
             Welcome, <strong>{user?.name || 'Customer'}</strong> ({user?.email}).
-            Track, reschedule, or cancel your appointments below.
+            Book salon treatments and manage your appointments below.
           </p>
         </div>
 
         {/* Actions in Header */}
-        <div className="header-actions" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="header-actions">
           <button
             type="button"
             onClick={handleOpenProfile}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#ffffff',
-              border: '2px solid #000',
-              padding: '8px 14px',
-              borderRadius: 8,
-              fontWeight: 800,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              boxShadow: '2px 2px 0px #000',
-            }}
+            className="btn-profile-settings"
           >
             <Settings size={16} />
             <span>Profile Settings</span>
@@ -156,123 +146,203 @@ export default function CustomerDashboard() {
         </div>
       )}
 
-      {/* AI Booking Banner / Tip */}
+      {/* AI Booking Hero Card */}
       <div className="ai-booking-banner">
         <div className="ai-banner-left">
-          <Sparkles size={20} className="sparkle-icon" />
+          <div className="ai-banner-icon-box">
+            <Sparkles size={22} className="sparkle-icon" />
+          </div>
           <div>
-            <strong>Need to schedule a new treatment?</strong>
-            <p>Our intelligent AI Assistant checks real-time stylist availability, handles preferences, and confirms appointments seamlessly.</p>
+            <strong>Conversational AI Stylist & Booking</strong>
+            <p>Our intelligent AI Assistant checks real-time stylist availability, handles breaks & certifications, and books in seconds.</p>
           </div>
         </div>
         <Link to="/ai-booking" className="btn-ai-banner-cta">
-          Talk to AI Assistant
+          <span>Talk to AI Stylist</span>
+          <ArrowRight size={14} />
         </Link>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="filter-tabs">
+      {/* Primary Section Switcher Tabs */}
+      <div className="main-section-tabs">
         <button
           type="button"
-          onClick={() => setFilter('upcoming')}
-          className={`filter-btn ${filter === 'upcoming' ? 'active' : ''}`}
+          onClick={() => setMainTab('services')}
+          className={`main-tab-btn ${mainTab === 'services' ? 'active' : ''}`}
         >
-          Upcoming ({customerAppointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length})
+          <Scissors size={16} />
+          <span>Browse Salon Services ({services.length})</span>
         </button>
         <button
           type="button"
-          onClick={() => setFilter('past')}
-          className={`filter-btn ${filter === 'past' ? 'active' : ''}`}
+          onClick={() => setMainTab('bookings')}
+          className={`main-tab-btn ${mainTab === 'bookings' ? 'active' : ''}`}
         >
-          History ({customerAppointments.filter(a => a.status === 'completed' || a.status === 'cancelled').length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter('all')}
-          className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-        >
-          All Bookings ({customerAppointments.length})
+          <Calendar size={16} />
+          <span>My Appointments ({customerAppointments.length})</span>
         </button>
       </div>
 
-      {/* Appointments List */}
-      <div className="appointments-grid">
-        {filteredAppointments.length === 0 ? (
-          <div className="empty-state">
-            <Calendar size={48} className="empty-icon" />
-            <h3>No appointments found</h3>
-            <p>You don't have any appointments in this view. Use the AI Assistant to book your next session!</p>
-            <Link to="/ai-booking" className="btn-primary-small">
-              <Bot size={16} /> Book with AI Assistant
-            </Link>
+      {/* ── TAB 1: BROWSE SALON SERVICES ── */}
+      {mainTab === 'services' && (
+        <div className="services-showcase-section">
+          <div className="services-section-intro">
+            <h2>Our Signature Salon Menu</h2>
+            <p>Select any service to review duration and pricing, or tap <strong>Book with AI</strong> to pick your stylist and date.</p>
           </div>
-        ) : (
-          filteredAppointments.map((apt) => (
-            <div key={apt.id} className={`appointment-card status-${apt.status}`}>
-              <div className="card-top">
-                <div className="service-info">
-                  <span className="service-name">{apt.serviceName}</span>
-                  <span className="service-price">{apt.servicePrice}</span>
-                </div>
-                <span className={`status-badge badge-${apt.status}`}>
-                  {apt.status === 'confirmed' && <CheckCircle size={13} />}
-                  {apt.status === 'cancelled' && <XCircle size={13} />}
-                  {apt.status.toUpperCase()}
-                </span>
-              </div>
 
-              <div className="card-details">
-                <div className="detail-row">
-                  <Scissors size={15} />
-                  <span>Stylist: <strong>{apt.employeeName}</strong></span>
-                </div>
-                <div className="detail-row">
-                  <Calendar size={15} />
-                  <span>{apt.date}</span>
-                </div>
-                <div className="detail-row">
-                  <Clock size={15} />
-                  <span>{apt.time} ({apt.serviceDuration} mins)</span>
-                </div>
-                {apt.notes && (
-                  <div className="detail-notes">
-                    <strong>Note:</strong> <em>"{apt.notes}"</em>
+          <div className="services-cards-grid">
+            {services.map((srv) => (
+              <div key={srv.id} className="service-card-item">
+                <div className="service-card-header">
+                  <div className="service-icon-box">
+                    <Scissors size={18} />
                   </div>
-                )}
-              </div>
+                  <div className="service-badge-row">
+                    <span className="service-price-pill">${srv.price}</span>
+                    <span className="service-duration-pill">
+                      <Clock size={12} /> {srv.duration} min
+                    </span>
+                  </div>
+                </div>
 
-              <div className="card-actions">
-                <button
-                  type="button"
-                  onClick={() => setSelectedAptDetails(apt)}
-                  className="btn-action"
-                  style={{ background: '#f1f5f9', color: '#0f172a' }}
-                >
-                  View Details
-                </button>
-                {(apt.status === 'confirmed' || apt.status === 'pending') && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenReschedule(apt)}
-                      className="btn-action reschedule"
-                    >
-                      Reschedule
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCancelBooking(apt.id)}
-                      className="btn-action cancel"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
+                <h3 className="service-card-title">{srv.name}</h3>
+                <p className="service-card-description">{srv.description}</p>
+
+                <div className="service-card-footer">
+                  <Link
+                    to={`/ai-booking?service=${encodeURIComponent(srv.name)}`}
+                    className="btn-book-service-now"
+                  >
+                    <Sparkles size={14} />
+                    <span>Book with AI Stylist</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 2: MY APPOINTMENTS ── */}
+      {mainTab === 'bookings' && (
+        <div className="appointments-section">
+          {/* Sub Filter Tabs */}
+          <div className="filter-tabs">
+            <button
+              type="button"
+              onClick={() => setFilter('upcoming')}
+              className={`filter-btn ${filter === 'upcoming' ? 'active' : ''}`}
+            >
+              Upcoming ({customerAppointments.filter(a => a.status === 'confirmed' || a.status === 'pending').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('past')}
+              className={`filter-btn ${filter === 'past' ? 'active' : ''}`}
+            >
+              History ({customerAppointments.filter(a => a.status === 'completed' || a.status === 'cancelled').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('all')}
+              className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+            >
+              All ({customerAppointments.length})
+            </button>
+          </div>
+
+          {/* Appointments Grid */}
+          <div className="appointments-grid">
+            {filteredAppointments.length === 0 ? (
+              <div className="empty-state">
+                <Calendar size={48} className="empty-icon" />
+                <h3>No appointments in this view</h3>
+                <p>You haven't scheduled any treatments here yet. Explore our salon services or book with the AI assistant!</p>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setMainTab('services')}
+                    className="btn-primary-small"
+                    style={{ background: '#3b82f6' }}
+                  >
+                    <Scissors size={15} /> Browse Services Menu
+                  </button>
+                  <Link to="/ai-booking" className="btn-primary-small">
+                    <Bot size={15} /> Book with AI Assistant
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              filteredAppointments.map((apt) => (
+                <div key={apt.id} className={`appointment-card status-${apt.status}`}>
+                  <div className="card-top">
+                    <div className="service-info">
+                      <span className="service-name">{apt.serviceName}</span>
+                      <span className="service-price">{apt.servicePrice}</span>
+                    </div>
+                    <span className={`status-badge badge-${apt.status}`}>
+                      {apt.status === 'confirmed' && <CheckCircle size={13} />}
+                      {apt.status === 'cancelled' && <XCircle size={13} />}
+                      {apt.status.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="card-details">
+                    <div className="detail-row">
+                      <Scissors size={15} />
+                      <span>Stylist: <strong>{apt.employeeName}</strong></span>
+                    </div>
+                    <div className="detail-row">
+                      <Calendar size={15} />
+                      <span>{apt.date}</span>
+                    </div>
+                    <div className="detail-row">
+                      <Clock size={15} />
+                      <span>{apt.time} ({apt.serviceDuration} mins)</span>
+                    </div>
+                    {apt.notes && (
+                      <div className="detail-notes">
+                        <strong>Note:</strong> <em>"{apt.notes}"</em>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="card-actions">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAptDetails(apt)}
+                      className="btn-action"
+                      style={{ background: '#f1f5f9', color: '#0f172a' }}
+                    >
+                      View Details
+                    </button>
+                    {(apt.status === 'confirmed' || apt.status === 'pending') && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReschedule(apt)}
+                          className="btn-action reschedule"
+                        >
+                          Reschedule
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCancelBooking(apt.id)}
+                          className="btn-action cancel"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Reschedule Modal */}
       {rescheduleApt && (

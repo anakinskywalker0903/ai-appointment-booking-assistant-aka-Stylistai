@@ -1,0 +1,84 @@
+/* ── Mobile Action Dock (Adapted from devinterio.in mobile-cta-bar) ── */
+.mobile-action-dock {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-action-dock {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9000;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 2px solid var(--charcoal-dark);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 10px));
+  }
+
+  .dock-buttons {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-around;
+    gap: 8px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .dock-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 7px 4px;
+    min-height: 48px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--charcoal-light);
+    border: 1.5px solid transparent;
+    transition: all 0.12s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .dock-btn:active {
+    transform: scale(0.96);
+  }
+
+  .dock-btn-active {
+    color: var(--orange);
+    background: rgba(255, 111, 32, 0.08);
+    border-color: rgba(255, 111, 32, 0.3);
+  }
+
+  /* Highlight primary CTA (e.g. AI Stylist) */
+  .dock-btn-primary {
+    background: var(--orange);
+    color: #ffffff !important;
+    border: 1.5px solid var(--charcoal-dark);
+    box-shadow: 2px 2px 0px var(--charcoal-dark);
+  }
+
+  .dock-btn-primary.dock-btn-active {
+    background: var(--orange-hover);
+    box-shadow: 1px 1px 0px var(--charcoal-dark);
+    transform: translate(1px, 1px);
+  }
+}
+
+@media (max-width: 480px) {
+  .dock-btn span {
+    font-size: 10px;
+  }
+  .dock-btn {
+    padding: 6px 2px;
+  }
+}

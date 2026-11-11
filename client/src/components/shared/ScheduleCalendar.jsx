@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { timeToMinutes, formatTime12h, formatDatePretty } from '../../services/availabilityEngine';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, User, Scissors, ShieldAlert } from 'lucide-react';
 import './ScheduleCalendar.css';
@@ -17,6 +17,13 @@ export default function ScheduleCalendar({
     return initialDate || new Date().toISOString().slice(0, 10);
   });
   const [selectedStylist, setSelectedStylist] = useState(filterStaffName || 'all');
+
+  // Keep internal selected stylist synchronized when parent changes selected stylist
+  useEffect(() => {
+    if (filterStaffName) {
+      setSelectedStylist(filterStaffName);
+    }
+  }, [filterStaffName]);
 
   const openHour = parseInt((businessSettings.openTime || '09:00').split(':')[0], 10);
   const closeHour = parseInt((businessSettings.closeTime || '18:00').split(':')[0], 10);
@@ -72,6 +79,15 @@ export default function ScheduleCalendar({
     setCurrentDate(new Date().toISOString().slice(0, 10));
   };
 
+  const formattedDateMobile = useMemo(() => {
+    try {
+      const d = new Date(currentDate + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    } catch {
+      return currentDate;
+    }
+  }, [currentDate]);
+
   return (
     <div className="schedule-calendar-container neo-shadow-md">
       {/* ── Calendar Controls Bar ── */}
@@ -88,8 +104,9 @@ export default function ScheduleCalendar({
           </button>
 
           <div className="cal-current-date">
-            <CalendarIcon size={18} style={{ color: 'var(--orange)' }} />
-            <span>{formatDatePretty(currentDate)} ({currentDate})</span>
+            <CalendarIcon size={16} style={{ color: 'var(--orange)', flexShrink: 0 }} />
+            <span className="cal-date-desktop">{formatDatePretty(currentDate)}</span>
+            <span className="cal-date-mobile">{formattedDateMobile}</span>
           </div>
         </div>
 
@@ -113,7 +130,7 @@ export default function ScheduleCalendar({
 
       {/* ── Timetable Grid ── */}
       <div className="timetable-wrapper">
-        <table className="timetable-grid">
+        <table className={`timetable-grid ${visibleStaff.length <= 1 ? 'timetable-grid--single' : ''}`}>
           <thead>
             <tr>
               <th className="timetable-time-header">Time</th>

@@ -25,7 +25,7 @@ export default function LandingGateway() {
       <div className="gateway-hero">
         <div className="gateway-badge">
           <Sparkles size={14} />
-          <span>StylistAI V2 • Full-Stack Appointment Platform</span>
+          <span>StylistAI • Smart Salon Scheduling</span>
         </div>
         <h1 className="gateway-title">
           Smart Appointments, <span>Reliable Scheduling</span>
